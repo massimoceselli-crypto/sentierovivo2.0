@@ -1,44 +1,74 @@
-const SENTIERO_VIVO2_TRIAL_DAYS = 30;
-const SENTIERO_VIVO2_MASTER_KEYS = ["MassimoMaster2026", "SentieroVIP"];
+const LICENZA2_STORAGE_KEY = 'sentierovivo2_license_state';
+const LICENZA2_TRIAL_DAYS = 30;
+const LICENZA2_VALID_KEYS = [
+    'MASSIMOMASTER2026',
+    'SENTIEROVIP'
+];
+
+function getTodayDateString2() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
 
 function initTrialAndLicense() {
-    const now = Date.now();
-    const isActivated = localStorage.getItem('sentierovivo2_activated') === 'true';
+    const todayStr = getTodayDateString2();
+    const raw = localStorage.getItem(LICENZA2_STORAGE_KEY);
 
-    if (isActivated) {
-        return { status: 'activated', daysLeft: SENTIERO_VIVO2_TRIAL_DAYS };
+    if (!raw) {
+        const initial = {
+            startDate: todayStr,
+            lastSeenDate: todayStr,
+            activated: false,
+            activeKey: ''
+        };
+        localStorage.setItem(LICENZA2_STORAGE_KEY, JSON.stringify(initial));
+        return { status: 'trial', daysLeft: LICENZA2_TRIAL_DAYS };
     }
 
-    let installTime = parseInt(localStorage.getItem('sentierovivo2_install') || '0', 10);
-    let maxSeenTime = parseInt(localStorage.getItem('sentierovivo2_maxtime') || '0', 10);
+    const data = JSON.parse(raw);
 
-    if (!installTime) {
-        installTime = now;
-        maxSeenTime = now;
-        localStorage.setItem('sentierovivo2_install', String(installTime));
-        localStorage.setItem('sentierovivo2_maxtime', String(maxSeenTime));
-    } else if (now < maxSeenTime) {
+    if (data.activated) {
+        return { status: 'activated', daysLeft: 999, activeKey: data.activeKey || '' };
+    }
+
+    if (data.lastSeenDate && todayStr < data.lastSeenDate) {
         return { status: 'tampered', daysLeft: 0 };
-    } else {
-        localStorage.setItem('sentierovivo2_maxtime', String(now));
     }
 
-    const trialMs = SENTIERO_VIVO2_TRIAL_DAYS * 24 * 60 * 60 * 1000;
-    const elapsedMs = now - installTime;
+    data.lastSeenDate = todayStr;
+    localStorage.setItem(LICENZA2_STORAGE_KEY, JSON.stringify(data));
 
-    if (elapsedMs > trialMs) {
+    const start = new Date(data.startDate + 'T00:00:00');
+    const now = new Date(todayStr + 'T00:00:00');
+    const elapsedDays = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+    const daysLeft = LICENZA2_TRIAL_DAYS - elapsedDays;
+
+    if (daysLeft <= 0) {
         return { status: 'expired', daysLeft: 0 };
     }
 
-    const daysLeft = Math.ceil((trialMs - elapsedMs) / (24 * 60 * 60 * 1000));
-    return { status: 'trial', daysLeft: daysLeft };
+    return { status: 'trial', daysLeft };
 }
 
-function activateLicenseKey(inputKey) {
-    const cleanKey = (inputKey || '').trim();
-    if (SENTIERO_VIVO2_MASTER_KEYS.includes(cleanKey)) {
-        localStorage.setItem('sentierovivo2_activated', 'true');
-        return true;
+function activateLicenseKey(codeInput) {
+    const cleaned = (codeInput || '').trim().toUpperCase();
+    if (!LICENZA2_VALID_KEYS.includes(cleaned)) {
+        return false;
     }
-    return false;
+    const todayStr = getTodayDateString2();
+    const current = {
+        startDate: todayStr,
+        lastSeenDate: todayStr,
+        activated: true,
+        activeKey: cleaned
+    };
+    localStorage.setItem(LICENZA2_STORAGE_KEY, JSON.stringify(current));
+    return true;
+}
+
+function resetLicenseState2() {
+    localStorage.removeItem(LICENZA2_STORAGE_KEY);
 }
