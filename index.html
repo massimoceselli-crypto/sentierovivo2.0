@@ -4,22 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>sentierovivo2.0</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 </head>
-<body style="background:#121212; color:#ffffff; font-family:system-ui, sans-serif; padding:16px;">
-    
-    <!-- Contenitore per il messaggio di benvenuto -->
+<body style="margin:0; padding:16px; background:#121212; color:#ffffff; font-family:system-ui, sans-serif;">
+
+    <!-- Messaggio di benvenuto e prova 30 giorni -->
     <div id="welcome-box"></div>
 
-    <!-- Pannello della licenza / periodo di prova -->
-    <div id="license-panel" style="max-width:460px; margin:16px auto; background:#1e1e1e; padding:16px; border-radius:12px; border:1px solid #333; display:none;">
+    <!-- Pannello licenza -->
+    <div id="license-panel" style="max-width:460px; margin:14px auto; background:#1e1e1e; padding:16px; border-radius:12px; border:1px solid #333; display:none;">
         <p id="license-status-text" style="margin-bottom:10px; font-size:14px;"></p>
         <input id="license-code-input" type="text" placeholder="Inserisci codice di sblocco..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:10px; box-sizing:border-box;">
         <button onclick="handleLicenseSubmit()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; cursor:pointer;">Attiva Licenza</button>
     </div>
 
-    <!-- Caricamento dei file JavaScript separati -->
+    <!-- Configurazione contatti S.O.S. -->
+    <div id="sos-setup-panel" style="max-width:460px; margin:14px auto; background:#1e1e1e; padding:16px; border-radius:12px; border:1px solid #d32f2f;">
+        <h3 style="margin:0 0 10px 0; color:#ff8a80;">Contatti Emergenza S.O.S.</h3>
+        <input id="sos-name-input" type="text" placeholder="Il tuo nome e cognome" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
+        <input id="sos-c1-input" type="text" placeholder="Contatto 1 (obbligatorio)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
+        <input id="sos-c2-input" type="text" placeholder="Contatto 2 (opzionale)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
+        <button onclick="handleSaveSos()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#d32f2f; color:#fff; font-weight:bold; cursor:pointer;">Salva Contatti S.O.S.</button>
+        <p id="sos-feedback" style="margin-top:8px; font-size:13px; color:#ffcc80;"></p>
+    </div>
+
+    <!-- Configurazione cartella principale -->
+    <div id="folder-setup-panel" style="max-width:460px; margin:14px auto; background:#1e1e1e; padding:16px; border-radius:12px; border:1px solid #ff8f00;">
+        <h3 style="margin:0 0 10px 0; color:#ffd54f;">Cartella Principale Percorsi</h3>
+        <input id="default-folder-input" type="text" value="Trekking" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
+        <button onclick="handleSaveFolder()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#ff8f00; color:#121212; font-weight:bold; cursor:pointer;">Conferma Cartella Principale</button>
+        <p id="folder-feedback" style="margin-top:8px; font-size:13px; color:#a5d6a7;"></p>
+    </div>
+
+    <!-- Stato GPS e Mappa -->
+    <div style="max-width:460px; margin:14px auto;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:14px; font-weight:bold;">
+            <span id="gps-status-dot" style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#d32f2f;"></span>
+            <span id="gps-status-text">GPS in attesa...</span>
+        </div>
+        <div id="map2" style="width:100%; height:340px; border-radius:12px; border:2px solid #2e7d32; overflow:hidden;"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="benvenuto.js"></script>
     <script src="licenza.js"></script>
+    <script src="mappa.js"></script>
+    <script src="contatti-sos.js"></script>
+    <script src="cartella-iniziale.js"></script>
     <script>
         function refreshLicenseUi() {
             renderWelcomeScreen('welcome-box');
@@ -51,7 +82,40 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', refreshLicenseUi);
+        function loadSavedInputs() {
+            const c = getSos2Contacts();
+            document.getElementById('sos-name-input').value = c.userName;
+            document.getElementById('sos-c1-input').value = c.c1;
+            document.getElementById('sos-c2-input').value = c.c2;
+            document.getElementById('default-folder-input').value = getDefaultFolder2();
+
+            if (isSos2Configured()) {
+                document.getElementById('sos-feedback').innerText = "Contatti S.O.S. già configurati.";
+            }
+            if (isCartella2Configured()) {
+                document.getElementById('folder-feedback').innerText = "Cartella attiva: " + getDefaultFolder2();
+            }
+        }
+
+        function handleSaveSos() {
+            const name = document.getElementById('sos-name-input').value;
+            const c1 = document.getElementById('sos-c1-input').value;
+            const c2 = document.getElementById('sos-c2-input').value;
+            const res = saveSos2Contacts(name, c1, c2, '');
+            document.getElementById('sos-feedback').innerText = res.message;
+        }
+
+        function handleSaveFolder() {
+            const folderName = document.getElementById('default-folder-input').value;
+            const saved = saveDefaultFolder2(folderName);
+            document.getElementById('folder-feedback').innerText = "Cartella salvata: " + saved;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            refreshLicenseUi();
+            loadSavedInputs();
+            initSentieroMap('map2');
+        });
     </script>
 </body>
 </html>
