@@ -1,38 +1,35 @@
-const BENVENUTO_CONFIG = {
-    appName: "SentieroVivo 2.0",
-    trialDays: 30,
-    creatorContact: "Contatta Massimo Ceselli per richiedere il codice di attivazione."
-};
-
-function getWelcomeMessageData() {
-    const installDate = parseInt(localStorage.getItem('sentierovivo2_install') || Date.now(), 10);
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const elapsedDays = Math.floor((Date.now() - installDate) / msPerDay);
-    const daysLeft = Math.max(0, BENVENUTO_CONFIG.trialDays - elapsedDays);
-    const isActivated = localStorage.getItem('sentierovivo2_activated') === 'true';
-
-    return {
-        title: `Benvenuto in ${BENVENUTO_CONFIG.appName}`,
-        description:
-            "Applicazione per la registrazione di percorsi, waypoint, note vocali, foto, video e supporto alle escursioni e agli spostamenti.",
-        trialNotice: isActivated
-            ? "Licenza attiva: l'applicazione è sbloccata su questo dispositivo."
-            : `Hai la possibilità di consultare e provare questa app entro i prossimi ${BENVENUTO_CONFIG.trialDays} giorni (giorni residui: ${daysLeft}). Al termine del periodo di prova, per continuare ad utilizzarla dovrai contattare la persona che ha creato questa app.`,
-        contactInfo: BENVENUTO_CONFIG.creatorContact
-    };
-}
-
 function renderWelcomeScreen(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+    const el = document.getElementById(containerId);
+    if (!el) return;
 
-    const data = getWelcomeMessageData();
-    container.innerHTML = `
-        <div style="background:#1e1e1e; color:#ffffff; border:2px solid #2e7d32; border-radius:14px; padding:20px; max-width:460px; margin:20px auto; line-height:1.5;">
-            <h2 style="margin-bottom:10px; color:#66bb6a;">${data.title}</h2>
-            <p style="margin-bottom:12px; font-size:15px;">${data.description}</p>
-            <p style="margin-bottom:12px; font-size:14px; color:#ffd54f; font-weight:bold;">${data.trialNotice}</p>
-            <p style="font-size:13px; color:#cccccc;">${data.contactInfo}</p>
+    const state = typeof initTrialAndLicense === 'function'
+        ? initTrialAndLicense()
+        : { status: 'trial', daysLeft: 30 };
+
+    if (state.status === 'activated') {
+        el.innerHTML = '';
+        return;
+    }
+
+    const messaggioGiorni = state.status === 'expired'
+        ? "I 30 giorni di prova sono terminati. Inserisci qui sotto la chiave di sblocco oppure contatta Massimo per riceverla."
+        : `Hai a disposizione 30 giorni di prova gratuita (giorni residui: ${state.daysLeft}). Se hai già la chiave di sblocco, inseriscila qui sotto oppure contatta Massimo.`;
+
+    el.innerHTML = `
+        <div style="max-width:520px; margin:12px auto; background:#1e1e1e; color:#ffffff; padding:18px; border-radius:14px; border:2px solid #2e7d32; font-family:system-ui, sans-serif;">
+            <h2 style="margin:0 0 8px 0; color:#66bb6a; font-size:20px;">Benvenuto in SentieroVivo 2.0</h2>
+            <p style="margin:0 0 12px 0; line-height:1.45; font-size:14px; color:#e0e0e0;">
+                Applicazione per la registrazione delle tracce, waypoint e sicurezza sul percorso. ${messaggioGiorni}
+            </p>
+            <div style="background:#262626; padding:12px; border-radius:10px; border:1px solid #444;">
+                <label for="welcome-license-input" style="display:block; font-size:13px; font-weight:bold; color:#ffd54f; margin-bottom:6px;">
+                    Hai già la password / chiave di sblocco? Inseriscila qui:
+                </label>
+                <input id="welcome-license-input" type="text" placeholder="Inserisci password o chiave di sblocco..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #666; background:#141414; color:#ffffff; font-size:14px; margin-bottom:10px; box-sizing:border-box;">
+                <button type="button" onclick="handleWelcomeUnlock2()" style="width:100%; padding:11px; border:none; border-radius:8px; background:#2e7d32; color:#ffffff; font-weight:bold; font-size:14px; cursor:pointer;">
+                    Sblocca SentieroVivo 2.0
+                </button>
+            </div>
         </div>
     `;
 }
