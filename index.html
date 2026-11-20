@@ -18,6 +18,59 @@
         <button onclick="handleLicenseSubmit()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; cursor:pointer;">Attiva Licenza</button>
     </div>
 
+    <!-- Stato GPS e Mappa -->
+    <div style="max-width:460px; margin:14px auto;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:14px; font-weight:bold;">
+            <span id="gps-status-dot" style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#d32f2f;"></span>
+            <span id="gps-status-text">GPS in attesa...</span>
+            <span id="track2-status-label" style="margin-left:auto; color:#81c784; font-size:12px;">In attesa</span>
+        </div>
+        <div id="map2" style="width:100%; height:320px; border-radius:12px; border:2px solid #2e7d32; overflow:hidden;"></div>
+    </div>
+
+    <!-- Comandi Tracciamento -->
+    <div style="max-width:460px; margin:14px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #333;">
+        <h3 style="margin:0 0 10px 0; color:#66bb6a;">Tracciamento Percorso</h3>
+        <input id="track2-name-input" type="text" placeholder="Nome percorso (es. Giro nei campi)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:10px; box-sizing:border-box;">
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button onclick="handleStartTrack2()" style="flex:1; padding:11px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; cursor:pointer;">▶️ Avvia</button>
+            <button id="btn-pause-track2" onclick="handlePauseTrack2()" style="flex:1; padding:11px; border:none; border-radius:8px; background:#455a64; color:#fff; font-weight:bold; cursor:pointer;">⏸️ Pausa</button>
+        </div>
+
+        <div style="border-top:1px solid #333; padding-top:10px; margin-top:6px;">
+            <label style="display:block; font-size:13px; color:#ccc; margin-bottom:6px;">Salvataggio definitivo in cartella:</label>
+            <select id="save2-folder-select" style="width:100%; padding:9px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;"></select>
+            <input id="save2-new-folder-input" type="text" placeholder="Oppure scrivi una nuova cartella..." style="width:100%; padding:9px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
+            <button onclick="handleSaveTrack2()" style="width:100%; padding:11px; border:none; border-radius:8px; background:#d32f2f; color:#fff; font-weight:bold; cursor:pointer;">⏹️ Stop & Salva Percorso</button>
+        </div>
+    </div>
+
+    <!-- Comandi Waypoint e Media -->
+    <div style="max-width:460px; margin:14px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #333;">
+        <h3 style="margin:0 0 10px 0; color:#ffd54f;">Waypoint & Media</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+            <button onclick="handleManualWp2()" style="padding:10px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; cursor:pointer;">🏁 Bandierina</button>
+            <button onclick="handleAudioWp2()" style="padding:10px; border:none; border-radius:8px; background:#ff8f00; color:#121212; font-weight:bold; cursor:pointer;">🎙️ Nota Vocale</button>
+        </div>
+        <input id="wp2-note-input" type="text" placeholder="Testo nota vocale o didascalia..." style="width:100%; padding:9px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
+
+        <div style="margin-bottom:8px;">
+            <label style="display:block; font-size:12px; color:#ccc; margin-bottom:4px;">📸 Foto sul punto:</label>
+            <input id="wp2-photo-file" type="file" accept="image/*" capture="environment" onchange="handlePhotoWp2(event)" style="width:100%; font-size:12px; color:#fff;">
+        </div>
+
+        <div>
+            <label style="display:block; font-size:12px; color:#ccc; margin-bottom:4px;">🎥 Video sul punto:</label>
+            <input id="wp2-video-file" type="file" accept="video/*" capture="environment" onchange="handleVideoWp2(event)" style="width:100%; font-size:12px; color:#fff;">
+        </div>
+    </div>
+
+    <!-- Archivio Percorsi Salvati -->
+    <div style="max-width:460px; margin:14px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #333;">
+        <h3 style="margin:0 0 10px 0; color:#90caf9;">Archivio Percorsi Salvati</h3>
+        <div id="saved-tracks2-list" style="font-size:13px; color:#ccc;">Nessun percorso salvato al momento.</div>
+    </div>
+
     <!-- Configurazione contatti S.O.S. -->
     <div id="sos-setup-panel" style="max-width:460px; margin:14px auto; background:#1e1e1e; padding:16px; border-radius:12px; border:1px solid #d32f2f;">
         <h3 style="margin:0 0 10px 0; color:#ff8a80;">Contatti Emergenza S.O.S.</h3>
@@ -36,21 +89,15 @@
         <p id="folder-feedback" style="margin-top:8px; font-size:13px; color:#a5d6a7;"></p>
     </div>
 
-    <!-- Stato GPS e Mappa -->
-    <div style="max-width:460px; margin:14px auto;">
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:14px; font-weight:bold;">
-            <span id="gps-status-dot" style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#d32f2f;"></span>
-            <span id="gps-status-text">GPS in attesa...</span>
-        </div>
-        <div id="map2" style="width:100%; height:340px; border-radius:12px; border:2px solid #2e7d32; overflow:hidden;"></div>
-    </div>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="benvenuto.js"></script>
     <script src="licenza.js"></script>
     <script src="mappa.js"></script>
     <script src="contatti-sos.js"></script>
     <script src="cartella-iniziale.js"></script>
+    <script src="tracciamento.js"></script>
+    <script src="waypoint.js"></script>
+    <script src="archivio.js"></script>
     <script>
         function refreshLicenseUi() {
             renderWelcomeScreen('welcome-box');
@@ -82,6 +129,160 @@
             }
         }
 
+        function refreshFolderSelect2() {
+            const sel = document.getElementById('save2-folder-select');
+            if (!sel || typeof getKnownFolders2 !== 'function') return;
+            const folders = getKnownFolders2();
+            sel.innerHTML = folders.map((f) => `<option value="${f}">${f}</option>`).join('');
+        }
+
+        function renderSavedTracks2Ui() {
+            const box = document.getElementById('saved-tracks2-list');
+            if (!box || typeof loadSavedTracks2 !== 'function') return;
+            const tracks = loadSavedTracks2();
+            if (!tracks.length) {
+                box.innerHTML = "Nessun percorso salvato al momento.";
+                return;
+            }
+            box.innerHTML = tracks.map((t) => `
+                <div style="background:#2a2a2a; padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid #444;">
+                    <div style="font-weight:bold; color:#fff;">📁 ${t.name}</div>
+                    <div style="font-size:12px; color:#bbb; margin:4px 0;">Cartella: ${t.folder || 'Trekking'} • ${t.date} • Bandierine: ${(t.waypoints || []).length}</div>
+                    <div style="display:flex; gap:8px; margin-top:6px;">
+                        <button onclick="handleOpenTrack2(${t.id})" style="flex:1; padding:7px; border:none; border-radius:6px; background:#2e7d32; color:#fff; font-weight:bold; cursor:pointer;">Apri su Mappa</button>
+                        <button onclick="handleDeleteTrack2(${t.id})" style="padding:7px 12px; border:none; border-radius:6px; background:#b71c1c; color:#fff; font-weight:bold; cursor:pointer;">Elimina</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleOpenTrack2(id) {
+            if (openSavedTrack2OnMap(id)) {
+                document.getElementById('track2-status-label').innerText = "Percorso caricato";
+            }
+        }
+
+        function handleDeleteTrack2(id) {
+            if (confirm("Eliminare questo percorso salvato?")) {
+                deleteSavedTrack2(id);
+                renderSavedTracks2Ui();
+                refreshFolderSelect2();
+            }
+        }
+
+        function handleStartTrack2() {
+            const nameVal = document.getElementById('track2-name-input').value;
+            const res = startTrack2(nameVal);
+            addAutoWaypoint2();
+            document.getElementById('track2-status-label').innerText = "In registrazione: " + res.name;
+            document.getElementById('btn-pause-track2').innerText = "⏸️ Pausa";
+        }
+
+        function handlePauseTrack2() {
+            const res = togglePauseTrack2();
+            if (!res.ok) { alert(res.message); return; }
+            document.getElementById('btn-pause-track2').innerText = res.paused ? "▶️ Riprendi" : "⏸️ Pausa";
+            document.getElementById('track2-status-label').innerText = res.paused ? "In pausa" : "In registrazione";
+        }
+
+        function handleSaveTrack2() {
+            if (!track2Active && (!track2Coordinates || track2Coordinates.length === 0)) {
+                alert("Nessun percorso attivo da salvare.");
+                return;
+            }
+            const nameVal = document.getElementById('track2-name-input').value || track2Name;
+            const newFolder = document.getElementById('save2-new-folder-input').value.trim();
+            const chosenFolder = newFolder || document.getElementById('save2-folder-select').value;
+
+            const res = saveCurrentTrack2(nameVal, chosenFolder);
+            if (res.ok) {
+                document.getElementById('save2-new-folder-input').value = '';
+                document.getElementById('track2-status-label').innerText = "Salvato";
+                document.getElementById('btn-pause-track2').innerText = "⏸️ Pausa";
+                refreshFolderSelect2();
+                renderSavedTracks2Ui();
+                alert(`Percorso "${res.track.name}" salvato in "${res.track.folder}".`);
+            }
+        }
+
+        function handleManualWp2() {
+            if (!track2Active) { alert("Avvia prima la registrazione del percorso."); return; }
+            const idx = addManualWaypoint2();
+            alert("Bandierina manuale #" + idx + " inserita.");
+        }
+
+        function handleAudioWp2() {
+            if (!track2Active) { alert("Avvia prima la registrazione del percorso."); return; }
+            const txt = document.getElementById('wp2-note-input').value.trim();
+            const finalNote = txt || prompt("Scrivi o incolla il testo della nota vocale:") || "";
+            const idx = addAudioWaypoint2(finalNote);
+            document.getElementById('wp2-note-input').value = "";
+            alert("Nota vocale #" + idx + " salvata.");
+        }
+
+        function handlePhotoWp2(event) {
+            if (!track2Active) {
+                alert("Avvia prima la registrazione del percorso.");
+                event.target.value = "";
+                return;
+            }
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const caption = document.getElementById('wp2-note-input').value.trim();
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const idx = addPhotoWaypoint2(e.target.result, caption);
+                document.getElementById('wp2-note-input').value = "";
+                event.target.value = "";
+                alert("Foto #" + idx + " salvata sul punto.");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleVideoWp2(event) {
+            if (!track2Active) {
+                alert("Avvia prima la registrazione del percorso.");
+                event.target.value = "";
+                return;
+            }
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const caption = document.getElementById('wp2-note-input').value.trim();
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const idx = addVideoWaypoint2(e.target.result, caption);
+                document.getElementById('wp2-note-input').value = "";
+                event.target.value = "";
+                alert("Video #" + idx + " salvato sul punto.");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function onWaypoint2Clicked(wp) {
+            if (wp.type === 'photo' && wp.photo) {
+                const win = window.open("", "_blank");
+                if (win) {
+                    win.document.write(`<title>Foto #${wp.index}</title><body style="margin:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:sans-serif;"><img src="${wp.photo}" style="max-width:100%;max-height:85vh;"><p>${wp.caption || ''}</p></body>`);
+                }
+            } else if (wp.type === 'video' && wp.video) {
+                const win = window.open("", "_blank");
+                if (win) {
+                    win.document.write(`<title>Video #${wp.index}</title><body style="margin:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:sans-serif;"><video src="${wp.video}" controls autoplay style="max-width:100%;max-height:85vh;"></video><p>${wp.caption || ''}</p></body>`);
+                }
+            } else if (wp.type === 'audio') {
+                const testo = wp.note || "Nessuna trascrizione salvata.";
+                alert(`Nota vocale #${wp.index}:\n${testo}`);
+                if ('speechSynthesis' in window && wp.note) {
+                    window.speechSynthesis.cancel();
+                    const u = new SpeechSynthesisUtterance(wp.note);
+                    u.lang = 'it-IT';
+                    window.speechSynthesis.speak(u);
+                }
+            } else {
+                alert(`Bandierina #${wp.index} (${wp.type})`);
+            }
+        }
+
         function loadSavedInputs() {
             const c = getSos2Contacts();
             document.getElementById('sos-name-input').value = c.userName;
@@ -109,12 +310,34 @@
             const folderName = document.getElementById('default-folder-input').value;
             const saved = saveDefaultFolder2(folderName);
             document.getElementById('folder-feedback').innerText = "Cartella salvata: " + saved;
+            refreshFolderSelect2();
         }
+
+        const originalStartGps2 = startSentieroGpsWatch;
+        startSentieroGpsWatch = function() {
+            originalStartGps2();
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition((pos) => {
+                    if (typeof recordTrack2Point === 'function') {
+                        recordTrack2Point(pos.coords.latitude, pos.coords.longitude);
+                    }
+                }, null, { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 });
+            }
+        };
 
         window.addEventListener('DOMContentLoaded', () => {
             refreshLicenseUi();
             loadSavedInputs();
+            refreshFolderSelect2();
+            renderSavedTracks2Ui();
             initSentieroMap('map2');
+            setTimeout(() => {
+                if (typeof restoreTrack2DraftIfPresent === 'function') {
+                    if (restoreTrack2DraftIfPresent()) {
+                        document.getElementById('track2-status-label').innerText = "Bozza ripristinata";
+                    }
+                }
+            }, 350);
         });
     </script>
 </body>
