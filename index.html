@@ -83,6 +83,11 @@
         <p id="sos-feedback" style="margin-top:8px; font-size:13px; color:#ffcc80;"></p>
     </div>
 
+    <!-- Gestione chiave licenza -->
+    <div style="max-width:460px; margin:14px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #333;">
+        <button onclick="mostraPannelloCambioChiave2()" style="width:100%; padding:10px; border:none; border-radius:8px; background:#455a64; color:#fff; font-weight:bold; cursor:pointer;">🔑 Cambia / Inserisci Master Key</button>
+    </div>
+
     <!-- Configurazione cartella principale -->
     <div id="folder-setup-panel" style="max-width:460px; margin:14px auto; background:#1e1e1e; padding:16px; border-radius:12px; border:1px solid #ff8f00;">
         <h3 style="margin:0 0 10px 0; color:#ffd54f;">Cartella Principale Percorsi</h3>
@@ -100,6 +105,7 @@
     <script src="tracciamento.js"></script>
     <script src="waypoint.js"></script>
     <script src="archivio.js"></script>
+    <script src="chiave-licenza.js"></script>
     <script>
         function refreshLicenseUi() {
             renderWelcomeScreen('welcome-box');
@@ -123,11 +129,15 @@
 
         function handleLicenseSubmit() {
             const code = document.getElementById('license-code-input').value;
-            if (activateLicenseKey(code)) {
-                alert("Licenza attivata con successo per sentierovivo2.0!");
+            const res = typeof cambiaChiaveLicenza2 === 'function'
+                ? cambiaChiaveLicenza2(code)
+                : { ok: activateLicenseKey(code), message: "Codice non valido." };
+
+            if (res.ok) {
+                alert("Chiave attivata con successo: " + code.trim().toUpperCase());
                 refreshLicenseUi();
             } else {
-                alert("Codice non valido.");
+                alert(res.message || "Codice non valido.");
             }
         }
 
