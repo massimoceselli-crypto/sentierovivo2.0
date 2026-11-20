@@ -20,7 +20,7 @@ function mostraPannelloCambioChiave2() {
     const statusText = document.getElementById('license-status-text');
     const input = document.getElementById('license-code-input');
     if (panel) panel.style.display = 'block';
-    if (statusText) statusText.innerText = "Inserisci la tua Master Key (es. MASSIMOMASTER2026) per aggiornare la chiave attiva:";
+    if (statusText) statusText.innerText = "Inserisci la tua Master Key (MASSIMOMASTER2026) per aggiornare la chiave attiva:";
     if (input) {
         input.value = "";
         input.focus();
