@@ -1,7 +1,12 @@
 const MENU2_TOGGLES_KEY = 'sentierovivo2_menu_toggles';
 const MENU2_GEMINI_CONFIG_KEY = 'sentierovivo2_gemini_config';
-// Elenco password accettate (inclusa Massimo2026)
 const MENU2_ADMIN_PASSWORDS = ['MASSIMO2026', 'MASSIMOMASTER2026', 'SENTIEROVIP', 'SENTIERO2026'];
+
+const MENU2_FALLBACK_GEMINI_MODELS = [
+    { id: 'gemini-2.5-flash', label: 'gemini-2.5-flash (rapido e versatile)' },
+    { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro (ragionamento approfondito)' },
+    { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite (leggero e veloce)' }
+];
 
 function loadMenu2Toggles() {
     const defaults = {
@@ -230,21 +235,80 @@ function apriPannelloGeminiProtetto2(focusField) {
     }
 }
 
-function mostraModelliGeminiDisponibili2() {
+function renderGeminiModelsButtons2(modelsArray, intestazione) {
+    const listBox = document.getElementById('gemini-models-list');
+    if (!listBox) return;
+    listBox.style.display = 'block';
+
+    const buttonsHtml = modelsArray.map((m) => {
+        const safeId = String(m.id || '').replace(/'/g, "\\'");
+        const safeLabel = String(m.label || m.id || '');
+        return `<button type="button" onclick="selezionaModelloGemini2('${safeId}')" style="display:block; width:100%; text-align:left; padding:8px 10px; margin-bottom:6px; border-radius:6px; border:1px solid #546e7a; background:#263238; color:#fff; font-size:14px; cursor:pointer;">${safeLabel}</button>`;
+    }).join('');
+
+    listBox.innerHTML = `
+        <div style="font-size:13px; color:#ffd54f; font-weight:bold; margin-bottom:8px;">${intestazione}</div>
+        <div style="max-height:260px; overflow-y:auto; padding-right:4px;">${buttonsHtml}</div>
+    `;
+}
+
+async function mostraModelliGeminiDisponibili2() {
     if (!richiediPasswordAdminMenu2()) return;
     const box = assicuraPannelloGeminiEsistente2();
     box.style.display = 'block';
     box.scrollTop = 0;
     loadGeminiConfigToInputs2();
+
     const listBox = document.getElementById('gemini-models-list');
+    const kInp = document.getElementById('gemini-api-key-input');
+    const apiKey = (kInp && kInp.value.trim()) || getGeminiConfig2().apiKey;
+
+    if (!apiKey) {
+        renderGeminiModelsButtons2(
+            MENU2_FALLBACK_GEMINI_MODELS,
+            'Nessuna chiave API salvata: ecco i modelli predefiniti (clicca per selezionare):'
+        );
+        return;
+    }
+
     if (listBox) {
         listBox.style.display = 'block';
-        listBox.innerHTML = `
-            <div style="font-size:12px; color:#ffd54f; margin-bottom:6px;">Modelli consigliati (clicca per selezionare):</div>
-            <button type="button" onclick="selezionaModelloGemini2('gemini-2.5-flash')" style="display:block; width:100%; text-align:left; padding:7px; margin-bottom:5px; border-radius:6px; border:1px solid #555; background:#2a2a2a; color:#fff; cursor:pointer;">gemini-2.5-flash (rapido e versatile)</button>
-            <button type="button" onclick="selezionaModelloGemini2('gemini-2.5-pro')" style="display:block; width:100%; text-align:left; padding:7px; margin-bottom:5px; border-radius:6px; border:1px solid #555; background:#2a2a2a; color:#fff; cursor:pointer;">gemini-2.5-pro (ragionamento approfondito)</button>
-            <button type="button" onclick="selezionaModelloGemini2('gemini-2.5-flash-lite')" style="display:block; width:100%; text-align:left; padding:7px; border-radius:6px; border:1px solid #555; background:#2a2a2a; color:#fff; cursor:pointer;">gemini-2.5-flash-lite (leggero e veloce)</button>
-        `;
+        listBox.innerHTML = `<div style="font-size:13px; color:#80cbc4; padding:8px;">⏳ Recupero elenco modelli da Gemini in corso...</div>`;
+    }
+
+    try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
+        if (!resp.ok) {
+            throw new Error(`HTTP ${resp.status}`);
+        }
+        const data = await resp.json();
+        const rawModels = Array.isArray(data.models) ? data.models : [];
+
+        const filtered = rawModels
+            .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+            .map((m) => {
+                const shortId = String(m.name || '').replace(/^models\//, '');
+                const disp = m.displayName ? `${shortId} — ${m.displayName}` : shortId;
+                return { id: shortId, label: disp };
+            })
+            .filter((m) => !!m.id);
+
+        if (filtered.length > 0) {
+            renderGeminiModelsButtons2(
+                filtered,
+                `Modelli Gemini disponibili per la tua chiave (${filtered.length} trovati — clicca per selezionare):`
+            );
+        } else {
+            renderGeminiModelsButtons2(
+                MENU2_FALLBACK_GEMINI_MODELS,
+                'Elenco vuoto restituito: mostrati i modelli predefiniti (clicca per selezionare):'
+            );
+        }
+    } catch (err) {
+        renderGeminiModelsButtons2(
+            MENU2_FALLBACK_GEMINI_MODELS,
+            'Impossibile leggere l’elenco in tempo reale: mostrati i modelli predefiniti (clicca per selezionare):'
+        );
     }
 }
 
