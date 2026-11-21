@@ -2,6 +2,17 @@ const MENU2_TOGGLES_KEY = 'sentierovivo2_menu_toggles';
 const MENU2_GEMINI_CONFIG_KEY = 'sentierovivo2_gemini_config';
 const MENU2_ADMIN_PASSWORDS = ['MASSIMO2026', 'MASSIMOMASTER2026', 'SENTIEROVIP', 'SENTIERO2026'];
 
+// Unregister automatico di vecchi Service Worker per evitare blocchi da cache offline
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (let registration of registrations) {
+            registration.unregister();
+        }
+    }).catch(function(err) {
+        console.warn("Nessun Service Worker da rimuovere:", err);
+    });
+}
+
 const MENU2_FALLBACK_GEMINI_MODELS = [
     { id: 'gemini-2.5-flash', label: 'gemini-2.5-flash (rapido e versatile)' },
     { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro (ragionamento approfondito)' },
@@ -9,11 +20,7 @@ const MENU2_FALLBACK_GEMINI_MODELS = [
 ];
 
 function loadMenu2Toggles() {
-    const defaults = {
-        poi: true,
-        mountainRoads: true,
-        meteo24: true
-    };
+    const defaults = { poi: true, mountainRoads: true, meteo24: true };
     try {
         const raw = localStorage.getItem(MENU2_TOGGLES_KEY);
         if (!raw) return defaults;
@@ -72,9 +79,7 @@ function apriCartellaPercorsi2() {
 }
 
 function menuRegistraVocale2() {
-    if (typeof handleAudioWp2 === 'function') {
-        handleAudioWp2();
-    }
+    if (typeof handleAudioWp2 === 'function') handleAudioWp2();
 }
 
 function menuRegistraVideo2() {
@@ -119,9 +124,7 @@ function menuCreaNuovoPercorsoRientro2() {
     if (typeof startTrack2 === 'function') {
         startTrack2((typeof track2Name !== 'undefined' && track2Name ? track2Name : 'Percorso') + ' - Rientro');
         track2Coordinates = returnCoords;
-        if (typeof redrawTrack2Line === 'function') {
-            redrawTrack2Line();
-        }
+        if (typeof redrawTrack2Line === 'function') redrawTrack2Line();
         if (typeof sentieroMap !== 'undefined' && sentieroMap && returnCoords.length > 0) {
             sentieroMap.setView(returnCoords[0], 16);
         }
@@ -136,12 +139,7 @@ function menuCercaPuntiInteresse2() {
     const lat = typeof sentieroCurrentLat !== 'undefined' ? sentieroCurrentLat : 43.5485;
     const lng = typeof sentieroCurrentLng !== 'undefined' ? sentieroCurrentLng : 10.3106;
     if (typeof sentieroMap !== 'undefined' && sentieroMap) {
-        L.circle([lat, lng], {
-            radius: 1500,
-            color: '#4fc3f7',
-            fillColor: '#4fc3f7',
-            fillOpacity: 0.12
-        }).addTo(sentieroMap);
+        L.circle([lat, lng], { radius: 1500, color: '#4fc3f7', fillColor: '#4fc3f7', fillOpacity: 0.12 }).addTo(sentieroMap);
         sentieroMap.setView([lat, lng], 14);
     }
     alert(`Ricerca punti di interesse (rifugi, sorgenti, aree sosta) entro 1,5 km da: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
@@ -188,7 +186,6 @@ function assicuraPannelloGeminiEsistente2() {
         box.style.zIndex = '10000';
         return box;
     }
-
     box = document.createElement('div');
     box.id = 'gemini-admin-panel';
     box.className = 'sv2-fullscreen-drawer';
@@ -199,15 +196,11 @@ function assicuraPannelloGeminiEsistente2() {
                 <h2 style="margin:0; color:#80cbc4; font-size:20px;">⚙️ Configurazione Gemini</h2>
                 <button type="button" onclick="chiudiPannelloGemini2()" style="padding:8px 14px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer;">✕ Chiudi</button>
             </div>
-
             <label for="gemini-api-key-input" style="display:block; margin-bottom:6px; font-weight:bold; color:#e0f2f1;">Chiave API Gemini attuale / nuova:</label>
             <input id="gemini-api-key-input" type="text" placeholder="Incolla qui la chiave API Gemini..." style="width:100%; padding:11px; border-radius:8px; border:1px solid #546e7a; background:#263238; color:#fff; margin-bottom:14px; box-sizing:border-box; font-size:15px;">
-
             <label for="gemini-model-input" style="display:block; margin-bottom:6px; font-weight:bold; color:#e0f2f1;">Modello Gemini:</label>
             <input id="gemini-model-input" type="text" placeholder="es. gemini-2.5-flash" style="width:100%; padding:11px; border-radius:8px; border:1px solid #546e7a; background:#263238; color:#fff; margin-bottom:12px; box-sizing:border-box; font-size:15px;">
-
             <div id="gemini-models-list" style="display:none; margin-bottom:14px;"></div>
-
             <button type="button" onclick="salvaConfigurazioneGemini2()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">💾 Salva configurazione Gemini</button>
         </div>
     `;
@@ -239,13 +232,11 @@ function renderGeminiModelsButtons2(modelsArray, intestazione) {
     const listBox = document.getElementById('gemini-models-list');
     if (!listBox) return;
     listBox.style.display = 'block';
-
     const buttonsHtml = modelsArray.map((m) => {
         const safeId = String(m.id || '').replace(/'/g, "\\'");
         const safeLabel = String(m.label || m.id || '');
         return `<button type="button" onclick="selezionaModelloGemini2('${safeId}')" style="display:block; width:100%; text-align:left; padding:8px 10px; margin-bottom:6px; border-radius:6px; border:1px solid #546e7a; background:#263238; color:#fff; font-size:14px; cursor:pointer;">${safeLabel}</button>`;
     }).join('');
-
     listBox.innerHTML = `
         <div style="font-size:13px; color:#ffd54f; font-weight:bold; margin-bottom:8px;">${intestazione}</div>
         <div style="max-height:300px; overflow-y:auto; padding-right:4px;">${buttonsHtml}</div>
@@ -264,10 +255,7 @@ async function mostraModelliGeminiDisponibili2() {
     const apiKey = ((kInp && kInp.value) ? kInp.value : getGeminiConfig2().apiKey).trim();
 
     if (!apiKey) {
-        renderGeminiModelsButtons2(
-            MENU2_FALLBACK_GEMINI_MODELS,
-            'Chiave API non trovata: mostrati i modelli di base (inserisci prima la chiave e salvala):'
-        );
+        renderGeminiModelsButtons2(MENU2_FALLBACK_GEMINI_MODELS, 'Chiave API non trovata: mostrati i modelli di base (inserisci prima la chiave e salvala):');
         return;
     }
 
@@ -279,12 +267,10 @@ async function mostraModelliGeminiDisponibili2() {
     try {
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
         const data = await resp.json();
-
         if (!resp.ok) {
             const errMsg = (data && data.error && data.error.message) ? data.error.message : `HTTP ${resp.status}`;
             throw new Error(errMsg);
         }
-
         const rawModels = Array.isArray(data.models) ? data.models : [];
         const allModels = rawModels
             .map((m) => {
@@ -295,21 +281,12 @@ async function mostraModelliGeminiDisponibili2() {
             .filter((m) => !!m.id);
 
         if (allModels.length > 0) {
-            renderGeminiModelsButtons2(
-                allModels,
-                `Elenco modelli restituito da Google (${allModels.length} modelli — tocca per scegliere):`
-            );
+            renderGeminiModelsButtons2(allModels, `Elenco modelli restituito da Google (${allModels.length} modelli — tocca per scegliere):`);
         } else {
-            renderGeminiModelsButtons2(
-                MENU2_FALLBACK_GEMINI_MODELS,
-                'Google ha restituito un elenco vuoto: mostrati i 3 modelli di base:'
-            );
+            renderGeminiModelsButtons2(MENU2_FALLBACK_GEMINI_MODELS, 'Google ha restituito un elenco vuoto: mostrati i 3 modelli di base:');
         }
     } catch (err) {
-        renderGeminiModelsButtons2(
-            MENU2_FALLBACK_GEMINI_MODELS,
-            `Elenco online non caricato (${err.message || 'errore di rete'}) — mostrati i 3 modelli di base:`
-        );
+        renderGeminiModelsButtons2(MENU2_FALLBACK_GEMINI_MODELS, `Elenco online non caricato (${err.message || 'errore di rete'}) — mostrati i 3 modelli di base:`);
     }
 }
 
@@ -323,10 +300,7 @@ function getGeminiConfig2() {
         const raw = localStorage.getItem(MENU2_GEMINI_CONFIG_KEY);
         if (!raw) return { apiKey: '', model: 'gemini-2.5-flash' };
         const parsed = JSON.parse(raw);
-        return {
-            apiKey: (parsed.apiKey || '').trim(),
-            model: (parsed.model || '').trim() || 'gemini-2.5-flash'
-        };
+        return { apiKey: (parsed.apiKey || '').trim(), model: (parsed.model || '').trim() || 'gemini-2.5-flash' };
     } catch (err) {
         return { apiKey: '', model: 'gemini-2.5-flash' };
     }
@@ -349,7 +323,6 @@ function salvaConfigurazioneGemini2() {
     const mInp = document.getElementById('gemini-model-input');
     const apiKey = kInp ? kInp.value.trim() : '';
     const model = (mInp ? mInp.value.trim() : '') || 'gemini-2.5-flash';
-
     localStorage.setItem(MENU2_GEMINI_CONFIG_KEY, JSON.stringify({ apiKey, model }));
     alert(`Configurazione Gemini salvata.\nModello attivo: ${model}`);
     chiudiPannelloGemini2();
