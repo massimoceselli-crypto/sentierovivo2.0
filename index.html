@@ -97,12 +97,12 @@
         </div>
 
         <div style="display:flex; gap:8px; margin-bottom:10px;">
-            <input id="assistant-text-input" type="text" placeholder="Oppure scrivi una domanda (es. meteo, stato, punti)..." onkeydown="if(event.key==='Enter') askAssistantText2()" style="flex:1; padding:10px; border-radius:8px; border:1px solid #455a64; background:#223142; color:#fff; font-size:14px; box-sizing:border-box;">
+            <input id="assistant-text-input" type="text" placeholder="Oppure scrivi una domanda..." onkeydown="if(event.key==='Enter') askAssistantText2()" style="flex:1; padding:10px; border-radius:8px; border:1px solid #455a64; background:#223142; color:#fff; font-size:14px; box-sizing:border-box;">
             <button onclick="askAssistantText2()" style="padding:10px 14px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">Chiedi</button>
         </div>
 
         <div id="assistant-reply-box" style="background:#121b26; border:1px solid #2c435e; border-radius:8px; padding:10px 12px; font-size:14px; color:#bbdefb; min-height:42px;">
-            Premi <strong>Interroga con Microfono</strong> oppure scrivi una domanda. Se imposti <strong>Voce: OFF</strong>, non verrà riprodotto alcun audio.
+            Premi <strong>Interroga con Microfono</strong> oppure scrivi una domanda.
         </div>
     </div>
 
@@ -184,7 +184,7 @@
         </div>
     </div>
 
-    <!-- Menu Punti di Interesse (a tutto schermo con risultati visibili in alto) -->
+    <!-- Menu Punti di Interesse -->
     <div id="sentiero2-poi-modal" class="sv2-fullscreen-drawer" style="background:#141816; display:none;">
         <div style="max-width:680px; margin:0 auto; padding-bottom:40px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; position:sticky; top:0; background:#141816; padding:10px 0; border-bottom:1px solid #2e7d32; z-index:3;">
@@ -192,7 +192,6 @@
                 <button onclick="closePoiMenu2()" style="padding:9px 16px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">✕ Chiudi</button>
             </div>
 
-            <!-- Box risultati subito sopra la lista completa così non resta nascosto in fondo -->
             <div id="poi-results-box" style="background:#1e2421; border:2px solid #81c784; border-radius:10px; padding:14px; font-size:15px; color:#eceff1; margin-bottom:16px;">
                 Clicca su una categoria qui sotto per visualizzare subito i risultati qui in alto.
             </div>
@@ -420,17 +419,50 @@
             stopAssistantSpeech2();
         }
 
+        async function callGeminiApi2(promptText) {
+            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash' };
+            if (!cfg.apiKey) return null;
+
+            const modelName = cfg.model || 'gemini-2.5-flash';
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${cfg.apiKey}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `Sei l'assistente escursionistico di SentieroVivo 2.0. Rispondi in modo breve, pratico e conciso (massimo 2-3 frasi) alla seguente richiesta: ${promptText}`
+                            }]
+                        }]
+                    })
+                });
+
+                if (!response.ok) return null;
+                const data = await response.json();
+                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    return data.candidates[0].content.parts[0].text.trim();
+                }
+            } catch (err) {
+                console.warn("Chiamata Gemini non riuscita:", err);
+            }
+            return null;
+        }
+
         async function processAssistantQuestion2(question) {
             const q = (question || '').trim().toLowerCase();
             const replyBox = document.getElementById('assistant-reply-box');
             if (!q || !replyBox) return;
+
+            replyBox.innerHTML = `<span style="color:#ffd54f;">⏳ Elaborazione risposta...</span>`;
 
             const statoTxt = document.getElementById('track2-status-label')?.innerText || 'Pronto';
             const punti = typeof track2Coordinates !== 'undefined' ? track2Coordinates.length : 0;
             const wpCount = typeof waypoint2List !== 'undefined' ? waypoint2List.length : 0;
             const gpsStato = currentGpsCoords2 ? 'attivo' : 'in attesa';
 
-            let answer = `Stato attuale: ${statoTxt}. GPS ${gpsStato}, ${punti} punti registrati e ${wpCount} waypoint.`;
+            let answer = null;
 
             if (q.includes('meteo') || q.includes('tempo') || q.includes('pioggia')) {
                 const center = getPoiSearchCenter2();
@@ -440,15 +472,21 @@
                     if (data && data.current) {
                         answer = `Ora ci sono ${data.current.temperature_2m} gradi, precipitazioni ${data.current.precipitation} millimetri e vento a ${data.current.wind_speed_10m} chilometri orari.`;
                     }
-                } catch (e) {
-                    answer = 'Non sono riuscito a leggere il meteo in questo momento.';
-                }
+                } catch (e) {}
             } else if (q.includes('waypoint') || q.includes('bandierin')) {
                 answer = `Hai salvato ${wpCount} waypoint sul percorso corrente.`;
             } else if (q.includes('punti') || q.includes('traccia') || q.includes('registr')) {
                 answer = `Sono registrati ${punti} punti. Stato attuale: ${statoTxt}.`;
             } else if (q.includes('gps') || q.includes('posizione')) {
                 answer = `Il segnale GPS è ${gpsStato}.`;
+            }
+
+            if (!answer) {
+                answer = await callGeminiApi2(q);
+            }
+
+            if (!answer) {
+                answer = `Stato attuale: ${statoTxt}. GPS ${gpsStato}, ${punti} punti registrati e ${wpCount} waypoint.`;
             }
 
             replyBox.innerText = answer;
@@ -468,7 +506,7 @@
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRec) {
                 if (replyBox) {
-                    replyBox.innerText = 'Il riconoscimento vocale non è supportato da questo browser: puoi scrivere la domanda qui sotto.';
+                    replyBox.innerText = 'Riconoscimento vocale non supportato da questo browser: puoi scrivere la domanda qui sotto.';
                 }
                 return;
             }
@@ -491,7 +529,7 @@
 
             rec.onerror = () => {
                 if (replyBox) {
-                    replyBox.innerText = 'Non ho rilevato voce o il microfono non è accessibile. Puoi scrivere la domanda nella casella.';
+                    replyBox.innerText = 'Non ho rilevato la voce o il microfono non è accessibile. Puoi scrivere la domanda nella casella.';
                 }
             };
 
