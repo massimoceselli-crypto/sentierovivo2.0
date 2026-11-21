@@ -1,6 +1,7 @@
 const MENU2_TOGGLES_KEY = 'sentierovivo2_menu_toggles';
 const MENU2_GEMINI_CONFIG_KEY = 'sentierovivo2_gemini_config';
-const MENU2_ADMIN_PASSWORDS = ['MASSIMOMASTER2026', 'SENTIEROVIP'];
+// Elenco password accettate (inclusa Massimo2026)
+const MENU2_ADMIN_PASSWORDS = ['MASSIMO2026', 'MASSIMOMASTER2026', 'SENTIEROVIP', 'SENTIERO2026'];
 
 function loadMenu2Toggles() {
     const defaults = {
@@ -156,7 +157,7 @@ function menuMeteo24Ore2() {
 }
 
 function richiediPasswordAdminMenu2() {
-    const inserita = prompt("Inserisci la password per accedere alle impostazioni Licenza e Gemini:");
+    const inserita = prompt("Inserisci la password (es. Massimo2026):");
     if (inserita === null) return false;
     const pulita = inserita.trim().toUpperCase();
     if (!MENU2_ADMIN_PASSWORDS.includes(pulita)) {
