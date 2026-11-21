@@ -472,19 +472,24 @@ async function processAssistantQuestion2(question) {
 
     let answer = null;
 
+    // 1. Risposta immediata sull'ora locale
     if (qLower.includes('che ore sono') || qLower.includes('che ora è') || qLower.includes('che ora e') || qLower.includes("l'ora") || /\bora\b/.test(qLower)) {
         const adesso = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
         answer = `Sono le ${adesso}.`;
-    } else if (qLower.includes('meteo') || qLower.includes('tempo') || qLower.includes('pioggia')) {
+    } 
+    // 2. Risposta sul meteo ATTUALE della posizione GPS (solo se non si chiede "domani" o una città specifica)
+    else if ((qLower.includes('meteo') || qLower.includes('tempo') || qLower.includes('pioggia')) && !qLower.includes('domani') && !qLower.includes('prevision')) {
         const center = getPoiSearchCenter2();
         try {
             const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lon}&current=temperature_2m,precipitation,wind_speed_10m&timezone=auto`);
             const data = await resp.json();
             if (data && data.current) {
-                answer = `Ora ci sono ${data.current.temperature_2m} gradi, precipitazioni ${data.current.precipitation} millimetri e vento a ${data.current.wind_speed_10m} chilometri orari.`;
+                answer = `Nella tua posizione attuale ci sono ${data.current.temperature_2m} gradi, precipitazioni ${data.current.precipitation} millimetri e vento a ${data.current.wind_speed_10m} chilometri orari.`;
             }
         } catch (e) {}
-    } else if (qLower.includes('waypoint') || qLower.includes('bandierin')) {
+    } 
+    // 3. Risposte immediate sui dati della traccia e GPS
+    else if (qLower.includes('waypoint') || qLower.includes('bandierin')) {
         answer = `Hai salvato ${wpCount} waypoint sul percorso corrente.`;
     } else if (qLower.includes('punti') || qLower.includes('traccia') || qLower.includes('registr')) {
         answer = `Sono registrati ${punti} punti. Stato attuale: ${statoTxt}.`;
@@ -492,16 +497,17 @@ async function processAssistantQuestion2(question) {
         answer = `Il segnale GPS è ${gpsStato}.`;
     }
 
+    // 4. Se la domanda riguarda "domani", altre località (es. Punta Ala) o argomenti generali, interroga direttamente Gemini
     if (!answer) {
         const geminiRes = await callGeminiApi2(q);
-        if (geminiRes.text) {
+        if (geminiRes && geminiRes.text) {
             answer = geminiRes.text;
-        } else if (geminiRes.reason === 'no_key') {
-            answer = `Per rispondere a domande generali serve la chiave API Gemini salvata dal Menu. Intanto: stato ${statoTxt}, GPS ${gpsStato}, ${punti} punti e ${wpCount} waypoint.`;
-        } else if (geminiRes.reason === 'http_error') {
-            answer = `Gemini ha restituito un errore (${geminiRes.status}): controlla chiave API e modello nel Menu. Stato attuale: ${statoTxt}, GPS ${gpsStato}.`;
+        } else if (geminiRes && geminiRes.reason === 'no_key') {
+            answer = `Per chiedere il meteo di domani o di altre località serve la chiave API Gemini salvata nel Menu.`;
+        } else if (geminiRes && geminiRes.reason === 'http_error') {
+            answer = `Errore di connessione con Gemini (${geminiRes.status}): verifica la chiave API e il modello nel Menu.`;
         } else {
-            answer = `Non sono riuscito a contattare Gemini ora: riprova tra poco. Stato attuale: ${statoTxt}, GPS ${gpsStato}, ${punti} punti e ${wpCount} waypoint.`;
+            answer = `Non sono riuscito a recuperare la risposta per questa domanda. Verifica la connessione o la chiave Gemini nel Menu.`;
         }
     }
 
