@@ -248,7 +248,7 @@ function renderGeminiModelsButtons2(modelsArray, intestazione) {
 
     listBox.innerHTML = `
         <div style="font-size:13px; color:#ffd54f; font-weight:bold; margin-bottom:8px;">${intestazione}</div>
-        <div style="max-height:260px; overflow-y:auto; padding-right:4px;">${buttonsHtml}</div>
+        <div style="max-height:300px; overflow-y:auto; padding-right:4px;">${buttonsHtml}</div>
     `;
 }
 
@@ -261,53 +261,54 @@ async function mostraModelliGeminiDisponibili2() {
 
     const listBox = document.getElementById('gemini-models-list');
     const kInp = document.getElementById('gemini-api-key-input');
-    const apiKey = (kInp && kInp.value.trim()) || getGeminiConfig2().apiKey;
+    const apiKey = ((kInp && kInp.value) ? kInp.value : getGeminiConfig2().apiKey).trim();
 
     if (!apiKey) {
         renderGeminiModelsButtons2(
             MENU2_FALLBACK_GEMINI_MODELS,
-            'Nessuna chiave API salvata: ecco i modelli predefiniti (clicca per selezionare):'
+            'Chiave API non trovata: mostrati i modelli di base (inserisci prima la chiave e salvala):'
         );
         return;
     }
 
     if (listBox) {
         listBox.style.display = 'block';
-        listBox.innerHTML = `<div style="font-size:13px; color:#80cbc4; padding:8px;">⏳ Recupero elenco modelli da Gemini in corso...</div>`;
+        listBox.innerHTML = `<div style="font-size:13px; color:#80cbc4; padding:8px;">⏳ Lettura elenco completo modelli da Google...</div>`;
     }
 
     try {
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
-        if (!resp.ok) {
-            throw new Error(`HTTP ${resp.status}`);
-        }
         const data = await resp.json();
-        const rawModels = Array.isArray(data.models) ? data.models : [];
 
-        const filtered = rawModels
-            .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+        if (!resp.ok) {
+            const errMsg = (data && data.error && data.error.message) ? data.error.message : `HTTP ${resp.status}`;
+            throw new Error(errMsg);
+        }
+
+        const rawModels = Array.isArray(data.models) ? data.models : [];
+        const allModels = rawModels
             .map((m) => {
                 const shortId = String(m.name || '').replace(/^models\//, '');
-                const disp = m.displayName ? `${shortId} — ${m.displayName}` : shortId;
+                const disp = m.displayName ? `${shortId} (${m.displayName})` : shortId;
                 return { id: shortId, label: disp };
             })
             .filter((m) => !!m.id);
 
-        if (filtered.length > 0) {
+        if (allModels.length > 0) {
             renderGeminiModelsButtons2(
-                filtered,
-                `Modelli Gemini disponibili per la tua chiave (${filtered.length} trovati — clicca per selezionare):`
+                allModels,
+                `Elenco modelli restituito da Google (${allModels.length} modelli — tocca per scegliere):`
             );
         } else {
             renderGeminiModelsButtons2(
                 MENU2_FALLBACK_GEMINI_MODELS,
-                'Elenco vuoto restituito: mostrati i modelli predefiniti (clicca per selezionare):'
+                'Google ha restituito un elenco vuoto: mostrati i 3 modelli di base:'
             );
         }
     } catch (err) {
         renderGeminiModelsButtons2(
             MENU2_FALLBACK_GEMINI_MODELS,
-            'Impossibile leggere l’elenco in tempo reale: mostrati i modelli predefiniti (clicca per selezionare):'
+            `Elenco online non caricato (${err.message || 'errore di rete'}) — mostrati i 3 modelli di base:`
         );
     }
 }
