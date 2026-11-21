@@ -176,10 +176,49 @@ function apriGestioneLicenzaDaMenu2() {
     }
 }
 
+function assicuraPannelloGeminiEsistente2() {
+    let box = document.getElementById('gemini-admin-panel');
+    if (box) {
+        box.style.zIndex = '10000';
+        return box;
+    }
+
+    box = document.createElement('div');
+    box.id = 'gemini-admin-panel';
+    box.className = 'sv2-fullscreen-drawer';
+    box.style.cssText = 'background:#16202a; display:none; z-index:10000;';
+    box.innerHTML = `
+        <div style="max-width:620px; margin:0 auto; padding-bottom:40px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #37474f; padding-bottom:10px;">
+                <h2 style="margin:0; color:#80cbc4; font-size:20px;">⚙️ Configurazione Gemini</h2>
+                <button type="button" onclick="chiudiPannelloGemini2()" style="padding:8px 14px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer;">✕ Chiudi</button>
+            </div>
+
+            <label for="gemini-api-key-input" style="display:block; margin-bottom:6px; font-weight:bold; color:#e0f2f1;">Chiave API Gemini attuale / nuova:</label>
+            <input id="gemini-api-key-input" type="text" placeholder="Incolla qui la chiave API Gemini..." style="width:100%; padding:11px; border-radius:8px; border:1px solid #546e7a; background:#263238; color:#fff; margin-bottom:14px; box-sizing:border-box; font-size:15px;">
+
+            <label for="gemini-model-input" style="display:block; margin-bottom:6px; font-weight:bold; color:#e0f2f1;">Modello Gemini:</label>
+            <input id="gemini-model-input" type="text" placeholder="es. gemini-2.5-flash" style="width:100%; padding:11px; border-radius:8px; border:1px solid #546e7a; background:#263238; color:#fff; margin-bottom:12px; box-sizing:border-box; font-size:15px;">
+
+            <div id="gemini-models-list" style="display:none; margin-bottom:14px;"></div>
+
+            <button type="button" onclick="salvaConfigurazioneGemini2()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">💾 Salva configurazione Gemini</button>
+        </div>
+    `;
+    document.body.appendChild(box);
+    return box;
+}
+
+function chiudiPannelloGemini2() {
+    const box = document.getElementById('gemini-admin-panel');
+    if (box) box.style.display = 'none';
+}
+
 function apriPannelloGeminiProtetto2(focusField) {
     if (!richiediPasswordAdminMenu2()) return;
-    const box = document.getElementById('gemini-admin-panel');
-    if (box) box.style.display = 'block';
+    const box = assicuraPannelloGeminiEsistente2();
+    box.style.display = 'block';
+    box.scrollTop = 0;
     loadGeminiConfigToInputs2();
     if (focusField === 'model') {
         const mInp = document.getElementById('gemini-model-input');
@@ -192,8 +231,9 @@ function apriPannelloGeminiProtetto2(focusField) {
 
 function mostraModelliGeminiDisponibili2() {
     if (!richiediPasswordAdminMenu2()) return;
-    const box = document.getElementById('gemini-admin-panel');
-    if (box) box.style.display = 'block';
+    const box = assicuraPannelloGeminiEsistente2();
+    box.style.display = 'block';
+    box.scrollTop = 0;
     loadGeminiConfigToInputs2();
     const listBox = document.getElementById('gemini-models-list');
     if (listBox) {
@@ -212,10 +252,23 @@ function selezionaModelloGemini2(nomeModello) {
     if (mInp) mInp.value = nomeModello;
 }
 
-function loadGeminiConfigToInputs2() {
+function getGeminiConfig2() {
     try {
         const raw = localStorage.getItem(MENU2_GEMINI_CONFIG_KEY);
-        const cfg = raw ? JSON.parse(raw) : { apiKey: '', model: 'gemini-2.5-flash' };
+        if (!raw) return { apiKey: '', model: 'gemini-2.5-flash' };
+        const parsed = JSON.parse(raw);
+        return {
+            apiKey: (parsed.apiKey || '').trim(),
+            model: (parsed.model || '').trim() || 'gemini-2.5-flash'
+        };
+    } catch (err) {
+        return { apiKey: '', model: 'gemini-2.5-flash' };
+    }
+}
+
+function loadGeminiConfigToInputs2() {
+    try {
+        const cfg = getGeminiConfig2();
         const kInp = document.getElementById('gemini-api-key-input');
         const mInp = document.getElementById('gemini-model-input');
         if (kInp) kInp.value = cfg.apiKey || '';
@@ -233,4 +286,5 @@ function salvaConfigurazioneGemini2() {
 
     localStorage.setItem(MENU2_GEMINI_CONFIG_KEY, JSON.stringify({ apiKey, model }));
     alert(`Configurazione Gemini salvata.\nModello attivo: ${model}`);
+    chiudiPannelloGemini2();
 }
