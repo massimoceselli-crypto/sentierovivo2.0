@@ -15,12 +15,24 @@
         }
         .sos-blink-btn { animation: sosPulse2 1.2s infinite; }
 
-        @keyframes gpsDotPulse2 {
-            0% { transform: scale(0.92); opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.85); }
-            50% { transform: scale(1.18); opacity: 0.75; box-shadow: 0 0 10px 4px rgba(76, 175, 80, 0.55); }
-            100% { transform: scale(0.92); opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.85); }
+        @keyframes gpsPulseClean {
+            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.9); }
+            50% { opacity: 0.25; box-shadow: 0 0 12px 5px rgba(76, 175, 80, 0.65); }
+            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.9); }
         }
-        #gps-status-dot { animation: gpsDotPulse2 1.15s infinite; }
+        @keyframes gpsPulseWaiting {
+            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.85); }
+            50% { opacity: 0.25; box-shadow: 0 0 12px 5px rgba(255, 193, 7, 0.55); }
+            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.85); }
+        }
+        #gps-status-dot.gps-active {
+            background-color: #4caf50 !important;
+            animation: gpsPulseClean 1s infinite !important;
+        }
+        #gps-status-dot.gps-waiting {
+            background-color: #ffc107 !important;
+            animation: gpsPulseWaiting 1.2s infinite !important;
+        }
 
         .sv2-fullscreen-drawer {
             position: fixed; inset: 0; width: 100vw; height: 100vh;
@@ -54,7 +66,7 @@
 
     <div id="sv2-top-bar" style="max-width:520px; margin:6px auto 10px auto; display:flex; align-items:center; justify-content:space-between; gap:10px; background:#1c1c1c; padding:10px 12px; border-radius:12px; border:1px solid #333;">
         <div style="display:flex; align-items:center; gap:9px; min-width:0; flex:1;">
-            <span id="gps-status-dot" style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#4caf50; flex-shrink:0;"></span>
+            <span id="gps-status-dot" class="gps-waiting" style="display:inline-block; width:14px; height:14px; border-radius:50%; flex-shrink:0;"></span>
             <span id="gps-status-text" style="font-size:14px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GPS in attesa...</span>
         </div>
         <span id="track2-status-label" style="font-size:12px; color:#81c784; white-space:nowrap;">Pronto</span>
@@ -190,6 +202,110 @@
     <script src="chiave-licenza.js"></script>
     <script src="menu-sentiero.js"></script>
     <script>
+        let currentGpsCoords2 = null;
+        let fallbackMap2 = null;
+        let fallbackUserMarker2 = null;
+        let gpsWatchId2 = null;
+
+        function setGpsUiState2(active, labelText) {
+            const dot = document.getElementById('gps-status-dot');
+            const txt = document.getElementById('gps-status-text');
+            if (dot) {
+                dot.classList.remove('gps-active', 'gps-waiting');
+                dot.classList.add(active ? 'gps-active' : 'gps-waiting');
+            }
+            if (txt && labelText) {
+                txt.innerText = labelText;
+            }
+        }
+
+        function ensureMapReady2() {
+            const mapEl = document.getElementById('map2');
+            if (!mapEl || typeof L === 'undefined') return null;
+
+            if (typeof initSentieroMap === 'function' && !fallbackMap2) {
+                try {
+                    initSentieroMap('map2');
+                } catch (e) {}
+            }
+
+            if (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.setView === 'function') {
+                setTimeout(() => {
+                    try { sentieroMap.invalidateSize(); } catch (e) {}
+                }, 150);
+                return sentieroMap;
+            }
+
+            if (!fallbackMap2) {
+                const startLat = currentGpsCoords2 ? currentGpsCoords2.lat : 43.5485;
+                const startLon = currentGpsCoords2 ? currentGpsCoords2.lon : 10.4225;
+                fallbackMap2 = L.map('map2').setView([startLat, startLon], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(fallbackMap2);
+            }
+
+            setTimeout(() => {
+                try { fallbackMap2.invalidateSize(); } catch (e) {}
+            }, 150);
+            return fallbackMap2;
+        }
+
+        function updateMapWithPosition2(lat, lon) {
+            currentGpsCoords2 = { lat: Number(lat), lon: Number(lon) };
+            setGpsUiState2(true, `GPS attivo (${lat.toFixed(4)}, ${lon.toFixed(4)})`);
+
+            const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.setView === 'function')
+                ? sentieroMap
+                : fallbackMap2;
+
+            if (activeMap) {
+                try {
+                    activeMap.setView([lat, lon], activeMap.getZoom ? Math.max(activeMap.getZoom(), 14) : 14);
+                    if (!fallbackUserMarker2) {
+                        fallbackUserMarker2 = L.circleMarker([lat, lon], {
+                            radius: 8,
+                            color: '#ffffff',
+                            weight: 2,
+                            fillColor: '#2e7d32',
+                            fillOpacity: 1
+                        }).addTo(activeMap);
+                    } else {
+                        fallbackUserMarker2.setLatLng([lat, lon]);
+                    }
+                } catch (e) {}
+            }
+
+            if (typeof recordTrack2Point === 'function') {
+                try { recordTrack2Point(lat, lon); } catch (e) {}
+            }
+        }
+
+        function startGpsTrackingNow2() {
+            setGpsUiState2(false, 'GPS in ricerca...');
+            if (typeof startSentieroGpsWatch === 'function') {
+                try { startSentieroGpsWatch(); } catch (e) {}
+            }
+            if (!navigator.geolocation) {
+                setGpsUiState2(false, 'GPS non supportato');
+                return;
+            }
+            if (gpsWatchId2 !== null) {
+                navigator.geolocation.clearWatch(gpsWatchId2);
+            }
+            gpsWatchId2 = navigator.geolocation.watchPosition(
+                (pos) => {
+                    updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude);
+                },
+                (err) => {
+                    const msg = err && err.code === 1 ? 'Permesso GPS negato' : 'GPS in attesa segnale...';
+                    setGpsUiState2(false, msg);
+                },
+                { enableHighAccuracy: true, maximumAge: 3000, timeout: 12000 }
+            );
+        }
+
         function refreshLicenseUi() {
             if (typeof renderWelcomeScreen === 'function') renderWelcomeScreen('welcome-box');
             if (typeof initTrialAndLicense !== 'function') return;
@@ -220,9 +336,10 @@
             if (!el) return;
             const isHidden = (el.style.display === 'none' || !el.style.display);
             el.style.display = isHidden ? 'block' : 'none';
-            if (isHidden) el.scrollTop = 0;
-            if (!isHidden && typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.invalidateSize === 'function') {
-                setTimeout(() => sentieroMap.invalidateSize(), 100);
+            if (isHidden) {
+                el.scrollTop = 0;
+            } else {
+                ensureMapReady2();
             }
         }
 
@@ -244,12 +361,18 @@
         }
 
         function getPoiSearchCenter2() {
+            if (currentGpsCoords2 && typeof currentGpsCoords2.lat === 'number' && typeof currentGpsCoords2.lon === 'number') {
+                return currentGpsCoords2;
+            }
             if (typeof track2Coordinates !== 'undefined' && Array.isArray(track2Coordinates) && track2Coordinates.length > 0) {
                 const last = track2Coordinates[track2Coordinates.length - 1];
                 if (Array.isArray(last) && last.length >= 2) return { lat: Number(last[0]), lon: Number(last[1]) };
             }
-            if (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.getCenter === 'function') {
-                const c = sentieroMap.getCenter();
+            const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.getCenter === 'function')
+                ? sentieroMap
+                : fallbackMap2;
+            if (activeMap && typeof activeMap.getCenter === 'function') {
+                const c = activeMap.getCenter();
                 return { lat: c.lat, lon: c.lng };
             }
             return { lat: 43.5485, lon: 10.4225 };
@@ -555,14 +678,8 @@
                 document.getElementById('sos-c1-input').value = c.c1 || '';
                 document.getElementById('sos-c2-input').value = c.c2 || '';
             }
-            if (typeof getDefaultFolder2 === 'function') {
-                document.getElementById('default-folder-input').value = getDefaultFolder2();
-            }
             if (typeof isSos2Configured === 'function' && isSos2Configured()) {
                 document.getElementById('sos-feedback').innerText = "Contatti S.O.S. già configurati.";
-            }
-            if (typeof isCartella2Configured === 'function' && isCartella2Configured()) {
-                document.getElementById('folder-feedback').innerText = "Cartella attiva: " + getDefaultFolder2();
             }
         }
 
@@ -574,39 +691,13 @@
             document.getElementById('sos-feedback').innerText = res.message;
         }
 
-        function handleSaveFolder() {
-            const folderName = document.getElementById('default-folder-input').value;
-            const saved = saveDefaultFolder2(folderName);
-            document.getElementById('folder-feedback').innerText = "Cartella salvata: " + saved;
-            refreshFolderSelect2();
-        }
-
-        if (typeof startSentieroGpsWatch === 'function') {
-            const originalStartGps2 = startSentieroGpsWatch;
-            startSentieroGpsWatch = function() {
-                originalStartGps2();
-                if (navigator.geolocation) {
-                    navigator.geolocation.watchPosition((pos) => {
-                        const dot = document.getElementById('gps-status-dot');
-                        const txt = document.getElementById('gps-status-text');
-                        if (dot) dot.style.background = '#4caf50';
-                        if (txt) txt.innerText = 'GPS attivo';
-                        if (typeof recordTrack2Point === 'function') {
-                            recordTrack2Point(pos.coords.latitude, pos.coords.longitude);
-                        }
-                    }, null, { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 });
-                }
-            };
-        }
-
         window.addEventListener('DOMContentLoaded', () => {
             refreshLicenseUi();
             loadSavedInputs();
             refreshFolderSelect2();
             renderSavedTracks2Ui();
-            if (typeof initSentieroMap === 'function') {
-                initSentieroMap('map2');
-            }
+            ensureMapReady2();
+            startGpsTrackingNow2();
             setTimeout(() => {
                 if (typeof restoreTrack2DraftIfPresent === 'function') {
                     if (restoreTrack2DraftIfPresent()) {
