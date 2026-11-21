@@ -15,23 +15,29 @@
         }
         .sos-blink-btn { animation: sosPulse2 1.2s infinite; }
 
-        @keyframes gpsPulseClean {
-            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.9); }
-            50% { opacity: 0.25; box-shadow: 0 0 12px 5px rgba(76, 175, 80, 0.65); }
-            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.9); }
+        @keyframes gpsPulseGreen2 {
+            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.95); }
+            50% { opacity: 0.2; box-shadow: 0 0 14px 6px rgba(76, 175, 80, 0.75); }
+            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.95); }
         }
-        @keyframes gpsPulseWaiting {
-            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.85); }
-            50% { opacity: 0.25; box-shadow: 0 0 12px 5px rgba(255, 193, 7, 0.55); }
-            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.85); }
+        @keyframes gpsPulseAmber2 {
+            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.95); }
+            50% { opacity: 0.2; box-shadow: 0 0 14px 6px rgba(255, 193, 7, 0.65); }
+            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.95); }
         }
         #gps-status-dot.gps-active {
             background-color: #4caf50 !important;
-            animation: gpsPulseClean 1s infinite !important;
+            animation-name: gpsPulseGreen2 !important;
+            animation-duration: 0.95s !important;
+            animation-iteration-count: infinite !important;
+            animation-timing-function: ease-in-out !important;
         }
         #gps-status-dot.gps-waiting {
             background-color: #ffc107 !important;
-            animation: gpsPulseWaiting 1.2s infinite !important;
+            animation-name: gpsPulseAmber2 !important;
+            animation-duration: 1.1s !important;
+            animation-iteration-count: infinite !important;
+            animation-timing-function: ease-in-out !important;
         }
 
         .sv2-fullscreen-drawer {
@@ -66,11 +72,38 @@
 
     <div id="sv2-top-bar" style="max-width:520px; margin:6px auto 10px auto; display:flex; align-items:center; justify-content:space-between; gap:10px; background:#1c1c1c; padding:10px 12px; border-radius:12px; border:1px solid #333;">
         <div style="display:flex; align-items:center; gap:9px; min-width:0; flex:1;">
-            <span id="gps-status-dot" class="gps-waiting" style="display:inline-block; width:14px; height:14px; border-radius:50%; flex-shrink:0;"></span>
+            <span id="gps-status-dot" class="gps-waiting" style="display:inline-block; width:15px; height:15px; border-radius:50%; flex-shrink:0;"></span>
             <span id="gps-status-text" style="font-size:14px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GPS in attesa...</span>
         </div>
         <span id="track2-status-label" style="font-size:12px; color:#81c784; white-space:nowrap;">Pronto</span>
         <button class="sos-blink-btn" onclick="toggleSosPanel2()" style="padding:8px 14px; border:none; border-radius:8px; color:#ffffff; font-weight:bold; font-size:14px; cursor:pointer; flex-shrink:0;">SOS</button>
+    </div>
+
+    <!-- Pannello Assistente Info con Microfono e Interruttore Voce ON/OFF -->
+    <div id="sv2-assistant-panel" style="max-width:520px; margin:8px auto 10px auto; background:#182433; padding:14px; border-radius:12px; border:1px solid #1e88e5; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
+            <h3 style="margin:0; color:#90caf9; font-size:17px;">ℹ️ Assistente Info</h3>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button id="btn-voice-toggle2" onclick="toggleAssistantVoice2()" style="padding:7px 12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">🔊 Voce: ON</button>
+                <button onclick="closeAssistantInfo2()" style="padding:7px 12px; border:none; border-radius:8px; background:#424242; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">✕ Chiudi</button>
+            </div>
+        </div>
+
+        <div id="assistant-status-summary" style="background:#101924; padding:10px 12px; border-radius:8px; font-size:14px; color:#e3f2fd; margin-bottom:10px; line-height:1.45;"></div>
+
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button id="btn-mic-ask2" onclick="startAssistantVoiceQuery2()" style="flex:1; padding:11px; border:none; border-radius:8px; background:#1565c0; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">🎤 Interroga con Microfono</button>
+            <button onclick="stopAssistantSpeech2()" style="padding:11px 12px; border:none; border-radius:8px; background:#37474f; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">🔇 Muto</button>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <input id="assistant-text-input" type="text" placeholder="Oppure scrivi una domanda (es. meteo, stato, punti)..." onkeydown="if(event.key==='Enter') askAssistantText2()" style="flex:1; padding:10px; border-radius:8px; border:1px solid #455a64; background:#223142; color:#fff; font-size:14px; box-sizing:border-box;">
+            <button onclick="askAssistantText2()" style="padding:10px 14px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">Chiedi</button>
+        </div>
+
+        <div id="assistant-reply-box" style="background:#121b26; border:1px solid #2c435e; border-radius:8px; padding:10px 12px; font-size:14px; color:#bbdefb; min-height:42px;">
+            Premi <strong>Interroga con Microfono</strong> oppure scrivi una domanda. Se imposti <strong>Voce: OFF</strong>, non verrà riprodotto alcun audio.
+        </div>
     </div>
 
     <div id="sos-setup-panel" style="max-width:520px; margin:8px auto 10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #d32f2f; display:none;">
@@ -151,15 +184,20 @@
         </div>
     </div>
 
-    <!-- Menu Punti di Interesse (a tutto schermo con Strade in Montagna dentro) -->
+    <!-- Menu Punti di Interesse (a tutto schermo con risultati visibili in alto) -->
     <div id="sentiero2-poi-modal" class="sv2-fullscreen-drawer" style="background:#141816; display:none;">
         <div style="max-width:680px; margin:0 auto; padding-bottom:40px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; position:sticky; top:0; background:#141816; padding:10px 0; border-bottom:1px solid #2e7d32; z-index:2;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; position:sticky; top:0; background:#141816; padding:10px 0; border-bottom:1px solid #2e7d32; z-index:3;">
                 <h2 style="margin:0; color:#a5d6a7; font-size:22px;">📍 Punti di Interesse</h2>
                 <button onclick="closePoiMenu2()" style="padding:9px 16px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">✕ Chiudi</button>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr; gap:9px; margin-bottom:16px;">
+            <!-- Box risultati subito sopra la lista completa così non resta nascosto in fondo -->
+            <div id="poi-results-box" style="background:#1e2421; border:2px solid #81c784; border-radius:10px; padding:14px; font-size:15px; color:#eceff1; margin-bottom:16px;">
+                Clicca su una categoria qui sotto per visualizzare subito i risultati qui in alto.
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr; gap:9px;">
                 <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('STRADE IN MONTAGNA')" style="background:#2e4c38; border-color:#81c784; color:#a5d6a7;">🏔️ STRADE IN MONTAGNA</button>
                 <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('SENTIERI NELLE VICINANZE')">🥾 SENTIERI NELLE VICINANZE</button>
                 <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('RIFUGI CAI E NON')">🏕️ RIFUGI CAI E NON</button>
@@ -174,10 +212,6 @@
                 <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('FARMACIE')">💊 FARMACIE</button>
                 <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('GOMMISTI')">🛞 GOMMISTI</button>
                 <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('PUNTI DI INFORMAZIONI')">ℹ️ PUNTI DI INFORMAZIONI</button>
-            </div>
-
-            <div id="poi-results-box" style="background:#1e2421; border:1px solid #37474f; border-radius:10px; padding:14px; font-size:15px; color:#eceff1;">
-                Clicca su una delle categorie in alto per caricare immediatamente la lista dei luoghi nelle vicinanze.
             </div>
         </div>
     </div>
@@ -206,6 +240,56 @@
         let fallbackMap2 = null;
         let fallbackUserMarker2 = null;
         let gpsWatchId2 = null;
+        const VOICE_PREF_KEY2 = 'sv2_assistant_voice_enabled';
+
+        function isAssistantVoiceEnabled2() {
+            const saved = localStorage.getItem(VOICE_PREF_KEY2);
+            return saved === null ? true : saved === 'true';
+        }
+
+        function updateVoiceToggleButton2() {
+            const btn = document.getElementById('btn-voice-toggle2');
+            if (!btn) return;
+            const enabled = isAssistantVoiceEnabled2();
+            btn.innerText = enabled ? '🔊 Voce: ON' : '🔇 Voce: OFF';
+            btn.style.background = enabled ? '#2e7d32' : '#c62828';
+        }
+
+        function stopAssistantSpeech2() {
+            try {
+                if (typeof window.speechSynthesis !== 'undefined') {
+                    window.speechSynthesis.cancel();
+                }
+            } catch (e) {}
+        }
+
+        function toggleAssistantVoice2() {
+            const nextState = !isAssistantVoiceEnabled2();
+            localStorage.setItem(VOICE_PREF_KEY2, nextState ? 'true' : 'false');
+            updateVoiceToggleButton2();
+            if (!nextState) {
+                stopAssistantSpeech2();
+                const replyBox = document.getElementById('assistant-reply-box');
+                if (replyBox) {
+                    replyBox.innerText = 'Voce disattivata (OFF): l’assistente non riprodurrà alcun audio.';
+                }
+            }
+        }
+
+        function speakAssistantReply2(text) {
+            if (!isAssistantVoiceEnabled2()) {
+                stopAssistantSpeech2();
+                return;
+            }
+            try {
+                if (typeof window.speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined') {
+                    window.speechSynthesis.cancel();
+                    const utter = new SpeechSynthesisUtterance(text);
+                    utter.lang = 'it-IT';
+                    window.speechSynthesis.speak(utter);
+                }
+            } catch (e) {}
+        }
 
         function setGpsUiState2(active, labelText) {
             const dot = document.getElementById('gps-status-dot');
@@ -304,6 +388,114 @@
                 },
                 { enableHighAccuracy: true, maximumAge: 3000, timeout: 12000 }
             );
+        }
+
+        function refreshAssistantSummary2() {
+            const summary = document.getElementById('assistant-status-summary');
+            if (!summary) return;
+            const statoTxt = document.getElementById('track2-status-label')?.innerText || 'Pronto';
+            const punti = typeof track2Coordinates !== 'undefined' ? track2Coordinates.length : 0;
+            const wpCount = typeof waypoint2List !== 'undefined' ? waypoint2List.length : 0;
+            const gpsStato = currentGpsCoords2 ? 'Attivo' : 'In attesa';
+            summary.innerHTML = `
+                <div><strong>GPS:</strong> ${gpsStato}</div>
+                <div><strong>Stato:</strong> ${statoTxt}</div>
+                <div><strong>Punti registrati:</strong> ${punti}</div>
+                <div><strong>Waypoint:</strong> ${wpCount}</div>
+            `;
+        }
+
+        function handleAssistantInfo2() {
+            const panel = document.getElementById('sv2-assistant-panel');
+            if (!panel) return;
+            updateVoiceToggleButton2();
+            refreshAssistantSummary2();
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function closeAssistantInfo2() {
+            const panel = document.getElementById('sv2-assistant-panel');
+            if (panel) panel.style.display = 'none';
+            stopAssistantSpeech2();
+        }
+
+        async function processAssistantQuestion2(question) {
+            const q = (question || '').trim().toLowerCase();
+            const replyBox = document.getElementById('assistant-reply-box');
+            if (!q || !replyBox) return;
+
+            const statoTxt = document.getElementById('track2-status-label')?.innerText || 'Pronto';
+            const punti = typeof track2Coordinates !== 'undefined' ? track2Coordinates.length : 0;
+            const wpCount = typeof waypoint2List !== 'undefined' ? waypoint2List.length : 0;
+            const gpsStato = currentGpsCoords2 ? 'attivo' : 'in attesa';
+
+            let answer = `Stato attuale: ${statoTxt}. GPS ${gpsStato}, ${punti} punti registrati e ${wpCount} waypoint.`;
+
+            if (q.includes('meteo') || q.includes('tempo') || q.includes('pioggia')) {
+                const center = getPoiSearchCenter2();
+                try {
+                    const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lon}&current=temperature_2m,precipitation,wind_speed_10m&timezone=auto`);
+                    const data = await resp.json();
+                    if (data && data.current) {
+                        answer = `Ora ci sono ${data.current.temperature_2m} gradi, precipitazioni ${data.current.precipitation} millimetri e vento a ${data.current.wind_speed_10m} chilometri orari.`;
+                    }
+                } catch (e) {
+                    answer = 'Non sono riuscito a leggere il meteo in questo momento.';
+                }
+            } else if (q.includes('waypoint') || q.includes('bandierin')) {
+                answer = `Hai salvato ${wpCount} waypoint sul percorso corrente.`;
+            } else if (q.includes('punti') || q.includes('traccia') || q.includes('registr')) {
+                answer = `Sono registrati ${punti} punti. Stato attuale: ${statoTxt}.`;
+            } else if (q.includes('gps') || q.includes('posizione')) {
+                answer = `Il segnale GPS è ${gpsStato}.`;
+            }
+
+            replyBox.innerText = answer;
+            speakAssistantReply2(answer);
+        }
+
+        function askAssistantText2() {
+            const inp = document.getElementById('assistant-text-input');
+            if (!inp) return;
+            const txt = inp.value.trim();
+            if (!txt) return;
+            processAssistantQuestion2(txt);
+        }
+
+        function startAssistantVoiceQuery2() {
+            const replyBox = document.getElementById('assistant-reply-box');
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRec) {
+                if (replyBox) {
+                    replyBox.innerText = 'Il riconoscimento vocale non è supportato da questo browser: puoi scrivere la domanda qui sotto.';
+                }
+                return;
+            }
+            stopAssistantSpeech2();
+            const rec = new SpeechRec();
+            rec.lang = 'it-IT';
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+
+            if (replyBox) {
+                replyBox.innerText = '🎤 Sto ascoltando... parla ora.';
+            }
+
+            rec.onresult = (event) => {
+                const spoken = event.results?.[0]?.[0]?.transcript || '';
+                const inp = document.getElementById('assistant-text-input');
+                if (inp) inp.value = spoken;
+                processAssistantQuestion2(spoken);
+            };
+
+            rec.onerror = () => {
+                if (replyBox) {
+                    replyBox.innerText = 'Non ho rilevato voce o il microfono non è accessibile. Puoi scrivere la domanda nella casella.';
+                }
+            };
+
+            rec.start();
         }
 
         function refreshLicenseUi() {
@@ -414,10 +606,39 @@
             }
         }
 
+        async function queryOverpassWithFallback2(query) {
+            const endpoints = [
+                'https://overpass-api.de/api/interpreter',
+                'https://overpass.kumi.systems/api/interpreter'
+            ];
+            let lastErr = null;
+            for (const url of endpoints) {
+                try {
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        body: 'data=' + encodeURIComponent(query)
+                    });
+                    if (!resp.ok) {
+                        lastErr = new Error('HTTP ' + resp.status);
+                        continue;
+                    }
+                    return await resp.json();
+                } catch (e) {
+                    lastErr = e;
+                }
+            }
+            throw lastErr || new Error('Servizio ricerca non disponibile');
+        }
+
         async function searchPoiCategory2(category) {
             const box = document.getElementById('poi-results-box');
+            const poiModal = document.getElementById('sentiero2-poi-modal');
             if (!box) return;
+
             box.innerHTML = `<div style="color:#ffd54f; font-weight:bold;">⏳ Ricerca in corso per "${category}"...</div>`;
+            if (poiModal) poiModal.scrollTop = 0;
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             const center = getPoiSearchCenter2();
             const radius = 5000;
@@ -425,11 +646,7 @@
             const query = `[out:json][timeout:15];${filter}out center 25;`;
 
             try {
-                const resp = await fetch('https://overpass-api.de/api/interpreter', {
-                    method: 'POST',
-                    body: 'data=' + encodeURIComponent(query)
-                });
-                const data = await resp.json();
+                const data = await queryOverpassWithFallback2(query);
                 const elements = Array.isArray(data.elements) ? data.elements : [];
 
                 const items = elements.map((el) => {
@@ -443,7 +660,7 @@
                     const street = tags['addr:street'] || '';
                     const houseNumber = tags['addr:housenumber'] || '';
                     const city = tags['addr:city'] || tags['addr:town'] || tags['addr:village'] || '';
-                    const address = [street, houseNumber, city].filter(Boolean).join(', ') || tags['addr:full'] || 'Indirizzo non presente nei dati map';
+                    const address = [street, houseNumber, city].filter(Boolean).join(', ') || tags['addr:full'] || 'Indirizzo non presente nei dati mappa';
                     const phone = tags.phone || tags['contact:phone'] || tags['phone:mobile'] || 'Telefono non disponibile';
                     return { name, address, phone };
                 });
@@ -473,8 +690,9 @@
                         </div>
                     `).join('')}
                 `;
+                if (poiModal) poiModal.scrollTop = 0;
             } catch (err) {
-                box.innerHTML = `<div style="color:#ef9a9a;">Impossibile completare la ricerca. Verificare la connessione internet e riprovare.</div>`;
+                box.innerHTML = `<div style="color:#ef9a9a;">Il server mappe ha impiegato troppo tempo o ha rifiutato temporaneamente la richiesta. Riprova tra qualche secondo.</div>`;
             }
         }
 
@@ -517,7 +735,7 @@
                 html += `</div>`;
                 box.innerHTML = html;
             } catch (err) {
-                box.innerHTML = `<div style="color:#ef9a9a;">Errore durante il recupero delle previsioni meteo.</div>`;
+                box.innerHTML = `<div style="color:#ef9a9a;">Servizio meteo momentaneamente non raggiungibile. Riprova tra qualche secondo.</div>`;
             }
         }
 
@@ -529,14 +747,6 @@
         function closeSaveTrackModal2() {
             const el = document.getElementById('sentiero2-save-modal');
             if (el) el.style.display = 'none';
-        }
-
-        function handleAssistantInfo2() {
-            const gpsTxt = document.getElementById('gps-status-text')?.innerText || 'GPS non attivo';
-            const statoTxt = document.getElementById('track2-status-label')?.innerText || 'Pronto';
-            const punti = typeof track2Coordinates !== 'undefined' ? track2Coordinates.length : 0;
-            const wpCount = typeof waypoint2List !== 'undefined' ? waypoint2List.length : 0;
-            alert(`Assistente Info SentieroVivo 2.0\n• ${gpsTxt}\n• Stato: ${statoTxt}\n• Punti registrati: ${punti}\n• Waypoint: ${wpCount}`);
         }
 
         function refreshFolderSelect2() {
@@ -692,6 +902,7 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            updateVoiceToggleButton2();
             refreshLicenseUi();
             loadSavedInputs();
             refreshFolderSelect2();
