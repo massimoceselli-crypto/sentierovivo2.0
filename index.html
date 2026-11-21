@@ -450,49 +450,51 @@
             return null;
         }
 
-        async function processAssistantQuestion2(question) {
-            const q = (question || '').trim().toLowerCase();
-            const replyBox = document.getElementById('assistant-reply-box');
-            if (!q || !replyBox) return;
+       async function processAssistantQuestion2(question) {
+    const q = (question || '').trim().toLowerCase();
+    const replyBox = document.getElementById('assistant-reply-box');
+    if (!q || !replyBox) return;
 
-            replyBox.innerHTML = `<span style="color:#ffd54f;">⏳ Elaborazione risposta...</span>`;
+    replyBox.innerHTML = `<span style="color:#ffd54f;">⏳ Elaborazione risposta...</span>`;
 
-            const statoTxt = document.getElementById('track2-status-label')?.innerText || 'Pronto';
-            const punti = typeof track2Coordinates !== 'undefined' ? track2Coordinates.length : 0;
-            const wpCount = typeof waypoint2List !== 'undefined' ? waypoint2List.length : 0;
-            const gpsStato = currentGpsCoords2 ? 'attivo' : 'in attesa';
+    const statoTxt = document.getElementById('track2-status-label')?.innerText || 'Pronto';
+    const punti = typeof track2Coordinates !== 'undefined' ? track2Coordinates.length : 0;
+    const wpCount = typeof waypoint2List !== 'undefined' ? waypoint2List.length : 0;
+    const gpsStato = currentGpsCoords2 ? 'attivo' : 'in attesa';
 
-            let answer = null;
+    let answer = null;
 
-            if (q.includes('meteo') || q.includes('tempo') || q.includes('pioggia')) {
-                const center = getPoiSearchCenter2();
-                try {
-                    const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lon}&current=temperature_2m,precipitation,wind_speed_10m&timezone=auto`);
-                    const data = await resp.json();
-                    if (data && data.current) {
-                        answer = `Ora ci sono ${data.current.temperature_2m} gradi, precipitazioni ${data.current.precipitation} millimetri e vento a ${data.current.wind_speed_10m} chilometri orari.`;
-                    }
-                } catch (e) {}
-            } else if (q.includes('waypoint') || q.includes('bandierin')) {
-                answer = `Hai salvato ${wpCount} waypoint sul percorso corrente.`;
-            } else if (q.includes('punti') || q.includes('traccia') || q.includes('registr')) {
-                answer = `Sono registrati ${punti} punti. Stato attuale: ${statoTxt}.`;
-            } else if (q.includes('gps') || q.includes('posizione')) {
-                answer = `Il segnale GPS è ${gpsStato}.`;
+    if (q.includes('che ore sono') || q.includes('che ora è') || q.includes('che ora e') || q.includes("l'ora") || /\bora\b/.test(q)) {
+        const adesso = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        answer = `Sono le ${adesso}.`;
+    } else if (q.includes('meteo') || q.includes('tempo') || q.includes('pioggia')) {
+        const center = getPoiSearchCenter2();
+        try {
+            const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lon}&current=temperature_2m,precipitation,wind_speed_10m&timezone=auto`);
+            const data = await resp.json();
+            if (data && data.current) {
+                answer = `Ora ci sono ${data.current.temperature_2m} gradi, precipitazioni ${data.current.precipitation} millimetri e vento a ${data.current.wind_speed_10m} chilometri orari.`;
             }
+        } catch (e) {}
+    } else if (q.includes('waypoint') || q.includes('bandierin')) {
+        answer = `Hai salvato ${wpCount} waypoint sul percorso corrente.`;
+    } else if (q.includes('punti') || q.includes('traccia') || q.includes('registr')) {
+        answer = `Sono registrati ${punti} punti. Stato attuale: ${statoTxt}.`;
+    } else if (q.includes('gps') || q.includes('posizione')) {
+        answer = `Il segnale GPS è ${gpsStato}.`;
+    }
 
-            if (!answer) {
-                answer = await callGeminiApi2(q);
-            }
+    if (!answer) {
+        answer = await callGeminiApi2(q);
+    }
 
-            if (!answer) {
-                answer = `Stato attuale: ${statoTxt}. GPS ${gpsStato}, ${punti} punti registrati e ${wpCount} waypoint.`;
-            }
+    if (!answer) {
+        answer = `Stato attuale: ${statoTxt}. GPS ${gpsStato}, ${punti} punti registrati e ${wpCount} waypoint.`;
+    }
 
-            replyBox.innerText = answer;
-            speakAssistantReply2(answer);
-        }
-
+    replyBox.innerText = answer;
+    speakAssistantReply2(answer);
+} 
         function askAssistantText2() {
             const inp = document.getElementById('assistant-text-input');
             if (!inp) return;
