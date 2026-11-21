@@ -419,101 +419,98 @@
             stopAssistantSpeech2();
         }
 
-       async function callGeminiApi2(promptText) {
-    const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash' };
-    if (!cfg.apiKey) {
-        return { text: null, reason: 'no_key' };
-    }
+        async function callGeminiApi2(promptText) {
+            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash' };
+            if (!cfg.apiKey) return { text: null, reason: 'no_key' };
 
-    const modelName = cfg.model || 'gemini-2.5-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
+            const modelName = cfg.model || 'gemini-2.5-flash';
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
 
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: `Sei l'assistente di SentieroVivo 2.0. Rispondi in italiano in modo chiaro, utile e diretto alla domanda dell'utente: ${promptText}`
-                    }]
-                }]
-            })
-        });
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `Sei l'assistente escursionistico di SentieroVivo 2.0. Rispondi in italiano in modo breve, preciso e naturale (2-3 frasi) alla seguente richiesta: ${promptText}`
+                            }]
+                        }]
+                    })
+                });
 
-        if (!response.ok) {
-            return { text: null, reason: 'http_error', status: response.status };
-        }
+                if (!response.ok) return { text: null, reason: 'http_error', status: response.status };
 
-        const data = await response.json();
-        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (reply && reply.trim()) {
-            return { text: reply.trim(), reason: 'ok' };
-        }
-        return { text: null, reason: 'empty_reply' };
-    } catch (err) {
-        console.warn("Chiamata Gemini non riuscita:", err);
-        return { text: null, reason: 'network_error' };
-    }
-}
-
-async function processAssistantQuestion2(question) {
-    const q = (question || '').trim();
-    const qLower = q.toLowerCase();
-    const replyBox = document.getElementById('assistant-reply-box');
-    if (!q || !replyBox) return;
-
-    replyBox.innerHTML = `<span style="color:#ffd54f;">⏳ Elaborazione risposta...</span>`;
-
-    const statoTxt = document.getElementById('track2-status-label')?.innerText || 'Pronto';
-    const punti = typeof track2Coordinates !== 'undefined' ? track2Coordinates.length : 0;
-    const wpCount = typeof waypoint2List !== 'undefined' ? waypoint2List.length : 0;
-    const gpsStato = currentGpsCoords2 ? 'attivo' : 'in attesa';
-
-    let answer = null;
-
-    // 1. Risposta immediata sull'ora locale
-    if (qLower.includes('che ore sono') || qLower.includes('che ora è') || qLower.includes('che ora e') || qLower.includes("l'ora") || /\bora\b/.test(qLower)) {
-        const adesso = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-        answer = `Sono le ${adesso}.`;
-    } 
-    // 2. Risposta sul meteo ATTUALE della posizione GPS (solo se non si chiede "domani" o una città specifica)
-    else if ((qLower.includes('meteo') || qLower.includes('tempo') || qLower.includes('pioggia')) && !qLower.includes('domani') && !qLower.includes('prevision')) {
-        const center = getPoiSearchCenter2();
-        try {
-            const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lon}&current=temperature_2m,precipitation,wind_speed_10m&timezone=auto`);
-            const data = await resp.json();
-            if (data && data.current) {
-                answer = `Nella tua posizione attuale ci sono ${data.current.temperature_2m} gradi, precipitazioni ${data.current.precipitation} millimetri e vento a ${data.current.wind_speed_10m} chilometri orari.`;
+                const data = await response.json();
+                const textResult = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (textResult && textResult.trim()) {
+                    return { text: textResult.trim(), reason: 'ok' };
+                }
+                return { text: null, reason: 'empty' };
+            } catch (err) {
+                console.warn("Chiamata Gemini fallita:", err);
+                return { text: null, reason: 'network_error' };
             }
-        } catch (e) {}
-    } 
-    // 3. Risposte immediate sui dati della traccia e GPS
-    else if (qLower.includes('waypoint') || qLower.includes('bandierin')) {
-        answer = `Hai salvato ${wpCount} waypoint sul percorso corrente.`;
-    } else if (qLower.includes('punti') || qLower.includes('traccia') || qLower.includes('registr')) {
-        answer = `Sono registrati ${punti} punti. Stato attuale: ${statoTxt}.`;
-    } else if (qLower.includes('gps') || qLower.includes('posizione')) {
-        answer = `Il segnale GPS è ${gpsStato}.`;
-    }
-
-    // 4. Se la domanda riguarda "domani", altre località (es. Punta Ala) o argomenti generali, interroga direttamente Gemini
-    if (!answer) {
-        const geminiRes = await callGeminiApi2(q);
-        if (geminiRes && geminiRes.text) {
-            answer = geminiRes.text;
-        } else if (geminiRes && geminiRes.reason === 'no_key') {
-            answer = `Per chiedere il meteo di domani o di altre località serve la chiave API Gemini salvata nel Menu.`;
-        } else if (geminiRes && geminiRes.reason === 'http_error') {
-            answer = `Errore di connessione con Gemini (${geminiRes.status}): verifica la chiave API e il modello nel Menu.`;
-        } else {
-            answer = `Non sono riuscito a recuperare la risposta per questa domanda. Verifica la connessione o la chiave Gemini nel Menu.`;
         }
-    }
 
-    replyBox.innerText = answer;
-    speakAssistantReply2(answer);
-}
+        async function processAssistantQuestion2(question) {
+            const q = (question || '').trim();
+            const qLower = q.toLowerCase();
+            const replyBox = document.getElementById('assistant-reply-box');
+            if (!q || !replyBox) return;
+
+            replyBox.innerHTML = `<span style="color:#ffd54f;">⏳ Elaborazione risposta...</span>`;
+
+            const statoTxt = document.getElementById('track2-status-label')?.innerText || 'Pronto';
+            const punti = typeof track2Coordinates !== 'undefined' ? track2Coordinates.length : 0;
+            const wpCount = typeof waypoint2List !== 'undefined' ? waypoint2List.length : 0;
+            const gpsStato = currentGpsCoords2 ? 'attivo' : 'in attesa';
+
+            let answer = null;
+
+            // 1. Ora locale
+            if (qLower.includes('che ore sono') || qLower.includes('che ora è') || qLower.includes('che ora e') || qLower.includes("l'ora") || /\bora\b/.test(qLower)) {
+                const adesso = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                answer = `Sono le ${adesso}.`;
+            } 
+            // 2. Meteo attuale nella posizione corrente (se non chiede espressamente domani o un'altra città)
+            else if ((qLower.includes('meteo') || qLower.includes('tempo') || qLower.includes('pioggia')) && !qLower.includes('domani') && !qLower.includes('prevision')) {
+                const center = getPoiSearchCenter2();
+                try {
+                    const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lon}&current=temperature_2m,precipitation,wind_speed_10m&timezone=auto`);
+                    const data = await resp.json();
+                    if (data && data.current) {
+                        answer = `Nella tua posizione ci sono ${data.current.temperature_2m} gradi, precipitazioni ${data.current.precipitation} millimetri e vento a ${data.current.wind_speed_10m} chilometri orari.`;
+                    }
+                } catch (e) {}
+            } 
+            // 3. Dati su traccia e GPS
+            else if (qLower.includes('waypoint') || qLower.includes('bandierin')) {
+                answer = `Hai salvato ${wpCount} waypoint sul percorso corrente.`;
+            } else if (qLower.includes('punti') || qLower.includes('traccia') || qLower.includes('registr')) {
+                answer = `Sono registrati ${punti} punti. Stato attuale: ${statoTxt}.`;
+            } else if (qLower.includes('gps') || qLower.includes('posizione')) {
+                answer = `Il segnale GPS è ${gpsStato}.`;
+            }
+
+            // 4. Se la domanda richiede risposte generali (es. "che tempo farà domani a Punta Ala?") chiama l'API Gemini
+            if (!answer) {
+                const resGemini = await callGeminiApi2(q);
+                if (resGemini && resGemini.text) {
+                    answer = resGemini.text;
+                } else if (resGemini && resGemini.reason === 'no_key') {
+                    answer = `Per domande generali o previsioni per altre città serve inserire la chiave API Gemini nel Menu.`;
+                } else if (resGemini && resGemini.reason === 'http_error') {
+                    answer = `Errore nella risposta di Gemini (codice ${resGemini.status}). Controlla la chiave API e il modello nel Menu.`;
+                } else {
+                    answer = `Non sono riuscito a collegarmi a Gemini per questa domanda. Verifica la chiave API e la connessione internet.`;
+                }
+            }
+
+            replyBox.innerText = answer;
+            speakAssistantReply2(answer);
+        }
+
         function askAssistantText2() {
             const inp = document.getElementById('assistant-text-input');
             if (!inp) return;
@@ -859,123 +856,4 @@ async function processAssistantQuestion2(question) {
         }
 
         function handlePauseTrack2() {
-            if (typeof togglePauseTrack2 !== 'function') return;
-            const res = togglePauseTrack2();
-            if (!res.ok) { alert(res.message); return; }
-            document.getElementById('btn-pause-track2').innerText = res.paused ? "▶️ Riprendi" : "⏸️ Pausa";
-            document.getElementById('track2-status-label').innerText = res.paused ? "In pausa" : "In registrazione";
-        }
-
-        function handleSaveTrack2() {
-            if (!track2Active && (!track2Coordinates || track2Coordinates.length === 0)) {
-                alert("Nessun percorso attivo da salvare.");
-                return;
-            }
-            const nameVal = document.getElementById('track2-name-input').value || track2Name;
-            const newFolder = document.getElementById('save2-new-folder-input').value.trim();
-            const chosenFolder = newFolder || document.getElementById('save2-folder-select').value;
-
-            const res = saveCurrentTrack2(nameVal, chosenFolder);
-            if (res.ok) {
-                document.getElementById('save2-new-folder-input').value = '';
-                document.getElementById('track2-status-label').innerText = "Salvato";
-                document.getElementById('btn-pause-track2').innerText = "⏸️ Pausa";
-                closeSaveTrackModal2();
-                refreshFolderSelect2();
-                renderSavedTracks2Ui();
-                alert(`Percorso "${res.track.name}" salvato in "${res.track.folder}".`);
-            }
-        }
-
-        function handleManualWp2() {
-            if (!track2Active) { alert("Avvia prima la registrazione del percorso."); return; }
-            const idx = addManualWaypoint2();
-            alert("Bandierina manuale #" + idx + " inserita.");
-        }
-
-        function handleAudioWp2() {
-            if (!track2Active) { alert("Avvia prima la registrazione del percorso."); return; }
-            const txt = document.getElementById('wp2-note-input').value.trim();
-            const finalNote = txt || prompt("Scrivi o incolla il testo della nota vocale:") || "";
-            const idx = addAudioWaypoint2(finalNote);
-            document.getElementById('wp2-note-input').value = "";
-            alert("Nota vocale #" + idx + " salvata.");
-        }
-
-        function handlePhotoWp2(event) {
-            if (!track2Active) {
-                alert("Avvia prima la registrazione del percorso.");
-                event.target.value = "";
-                return;
-            }
-            const file = event.target.files && event.target.files[0];
-            if (!file) return;
-            const caption = document.getElementById('wp2-note-input').value.trim();
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const idx = addPhotoWaypoint2(e.target.result, caption);
-                document.getElementById('wp2-note-input').value = "";
-                event.target.value = "";
-                alert("Foto #" + idx + " salvata sul punto.");
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function handleVideoWp2(event) {
-            if (!track2Active) {
-                alert("Avvia prima la registrazione del percorso.");
-                event.target.value = "";
-                return;
-            }
-            const file = event.target.files && event.target.files[0];
-            if (!file) return;
-            const caption = document.getElementById('wp2-note-input').value.trim();
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const idx = addVideoWaypoint2(e.target.result, caption);
-                document.getElementById('wp2-note-input').value = "";
-                event.target.value = "";
-                alert("Video #" + idx + " salvato sul punto.");
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function loadSavedInputs() {
-            if (typeof getSos2Contacts === 'function') {
-                const c = getSos2Contacts();
-                document.getElementById('sos-name-input').value = c.userName || '';
-                document.getElementById('sos-c1-input').value = c.c1 || '';
-                document.getElementById('sos-c2-input').value = c.c2 || '';
-            }
-            if (typeof isSos2Configured === 'function' && isSos2Configured()) {
-                document.getElementById('sos-feedback').innerText = "Contatti S.O.S. già configurati.";
-            }
-        }
-
-        function handleSaveSos() {
-            const name = document.getElementById('sos-name-input').value;
-            const c1 = document.getElementById('sos-c1-input').value;
-            const c2 = document.getElementById('sos-c2-input').value;
-            const res = saveSos2Contacts(name, c1, c2, '');
-            document.getElementById('sos-feedback').innerText = res.message;
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            updateVoiceToggleButton2();
-            refreshLicenseUi();
-            loadSavedInputs();
-            refreshFolderSelect2();
-            renderSavedTracks2Ui();
-            ensureMapReady2();
-            startGpsTrackingNow2();
-            setTimeout(() => {
-                if (typeof restoreTrack2DraftIfPresent === 'function') {
-                    if (restoreTrack2DraftIfPresent()) {
-                        document.getElementById('track2-status-label').innerText = "Bozza ripristinata";
-                    }
-                }
-            }, 350);
-        });
-    </script>
-</body>
-</html>
+            if (typeof togglePause
