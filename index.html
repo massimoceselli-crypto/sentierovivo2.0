@@ -16,6 +16,52 @@
         .sos-blink-btn {
             animation: sosPulse2 1.2s infinite;
         }
+
+        @keyframes gpsDotPulse2 {
+            0% { transform: scale(0.92); opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.85); }
+            50% { transform: scale(1.18); opacity: 0.75; box-shadow: 0 0 10px 4px rgba(76, 175, 80, 0.55); }
+            100% { transform: scale(0.92); opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.85); }
+        }
+        #gps-status-dot {
+            animation: gpsDotPulse2 1.15s infinite;
+        }
+
+        .sv2-fullscreen-drawer {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            max-width: none !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            z-index: 9999;
+            padding: 16px !important;
+            box-sizing: border-box;
+        }
+
+        .sv2-menu-big-btn {
+            padding: 14px 12px !important;
+            font-size: 16px !important;
+            line-height: 1.3;
+            border-radius: 10px !important;
+        }
+
+        .sv2-poi-cat-btn {
+            padding: 12px 10px;
+            border: 1px solid #455a64;
+            border-radius: 9px;
+            background: #263238;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: left;
+            cursor: pointer;
+        }
+        .sv2-poi-cat-btn:hover {
+            background: #37474f;
+        }
     </style>
 </head>
 <body style="margin:0; padding:10px; background:#121212; color:#ffffff; font-family:system-ui, sans-serif;">
@@ -23,30 +69,30 @@
     <div id="welcome-box"></div>
 
     <div id="license-panel" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #333; display:none;">
-        <p id="license-status-text" style="margin:0 0 10px 0; font-size:14px;"></p>
-        <input id="license-code-input" type="text" placeholder="Inserisci codice di sblocco..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:10px; box-sizing:border-box;">
-        <button onclick="handleLicenseSubmit()" style="width:100%; padding:11px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; cursor:pointer;">Attiva Licenza</button>
+        <p id="license-status-text" style="margin:0 0 10px 0; font-size:15px;"></p>
+        <input id="license-code-input" type="text" placeholder="Inserisci codice di sblocco..." style="width:100%; padding:11px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:10px; box-sizing:border-box; font-size:15px;">
+        <button onclick="handleLicenseSubmit()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Attiva Licenza</button>
     </div>
 
     <div id="sv2-top-bar" style="max-width:520px; margin:6px auto 10px auto; display:flex; align-items:center; justify-content:space-between; gap:10px; background:#1c1c1c; padding:10px 12px; border-radius:12px; border:1px solid #333;">
-        <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
-            <span id="gps-status-dot" style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#d32f2f; flex-shrink:0;"></span>
-            <span id="gps-status-text" style="font-size:13px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GPS non attivo</span>
+        <div style="display:flex; align-items:center; gap:9px; min-width:0; flex:1;">
+            <span id="gps-status-dot" style="display:inline-block; width:14px; height:14px; border-radius:50%; background:#4caf50; flex-shrink:0;"></span>
+            <span id="gps-status-text" style="font-size:14px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GPS in attesa...</span>
         </div>
-        <span id="track2-status-label" style="font-size:11px; color:#81c784; white-space:nowrap;">Pronto</span>
-        <button class="sos-blink-btn" onclick="toggleSosPanel2()" style="padding:8px 14px; border:none; border-radius:8px; color:#ffffff; font-weight:bold; font-size:13px; cursor:pointer; flex-shrink:0;">SOS</button>
+        <span id="track2-status-label" style="font-size:12px; color:#81c784; white-space:nowrap;">Pronto</span>
+        <button class="sos-blink-btn" onclick="toggleSosPanel2()" style="padding:8px 14px; border:none; border-radius:8px; color:#ffffff; font-weight:bold; font-size:14px; cursor:pointer; flex-shrink:0;">SOS</button>
     </div>
 
     <div id="sos-setup-panel" style="max-width:520px; margin:8px auto 10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #d32f2f; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <h3 style="margin:0; color:#ff8a80; font-size:15px;">Contatti Emergenza S.O.S.</h3>
-            <button onclick="toggleSosPanel2()" style="padding:4px 10px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer;">Chiudi</button>
+            <h3 style="margin:0; color:#ff8a80; font-size:16px;">Contatti Emergenza S.O.S.</h3>
+            <button onclick="toggleSosPanel2()" style="padding:6px 12px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer; font-size:14px;">Chiudi</button>
         </div>
-        <input id="sos-name-input" type="text" placeholder="Il tuo nome e cognome" style="width:100%; padding:9px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
-        <input id="sos-c1-input" type="text" placeholder="Contatto 1 (obbligatorio)" style="width:100%; padding:9px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
-        <input id="sos-c2-input" type="text" placeholder="Contatto 2 (opzionale)" style="width:100%; padding:9px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
-        <button onclick="handleSaveSos()" style="width:100%; padding:10px; border:none; border-radius:8px; background:#d32f2f; color:#fff; font-weight:bold; cursor:pointer;">Salva Contatti S.O.S.</button>
-        <p id="sos-feedback" style="margin:8px 0 0 0; font-size:12px; color:#ffcc80;"></p>
+        <input id="sos-name-input" type="text" placeholder="Il tuo nome e cognome" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <input id="sos-c1-input" type="text" placeholder="Contatto 1 (obbligatorio)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <input id="sos-c2-input" type="text" placeholder="Contatto 2 (opzionale)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <button onclick="handleSaveSos()" style="width:100%; padding:11px; border:none; border-radius:8px; background:#d32f2f; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Salva Contatti S.O.S.</button>
+        <p id="sos-feedback" style="margin:8px 0 0 0; font-size:13px; color:#ffcc80;"></p>
     </div>
 
     <div id="sv2-map-wrap" style="max-width:520px; margin:0 auto 10px auto;">
@@ -54,99 +100,132 @@
     </div>
 
     <div id="sv2-main-buttons" style="max-width:520px; margin:0 auto 12px auto; display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
-        <button onclick="handleStartTrack2()" style="padding:12px 6px; border:none; border-radius:10px; background:#2e7d32; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">▶️ Avvia</button>
-        <button id="btn-pause-track2" onclick="handlePauseTrack2()" style="padding:12px 6px; border:none; border-radius:10px; background:#455a64; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">⏸️ Pausa</button>
-        <button onclick="openSaveTrackModal2()" style="padding:12px 6px; border:none; border-radius:10px; background:#c62828; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">⏹️ Stop e Salva</button>
-        <button onclick="handleAssistantInfo2()" style="padding:12px 6px; border:none; border-radius:10px; background:#1565c0; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">ℹ️ Assistente Info</button>
-        <button onclick="handleManualWp2()" style="padding:12px 6px; border:none; border-radius:10px; background:#ef6c00; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">🏁 Waypoint</button>
-        <button onclick="toggleMenuDrawer2()" style="padding:12px 6px; border:none; border-radius:10px; background:#37474f; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">☰ Menu</button>
+        <button onclick="handleStartTrack2()" style="padding:12px 6px; border:none; border-radius:10px; background:#2e7d32; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">▶️ Avvia</button>
+        <button id="btn-pause-track2" onclick="handlePauseTrack2()" style="padding:12px 6px; border:none; border-radius:10px; background:#455a64; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">⏸️ Pausa</button>
+        <button onclick="openSaveTrackModal2()" style="padding:12px 6px; border:none; border-radius:10px; background:#c62828; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">⏹️ Stop e Salva</button>
+        <button onclick="handleAssistantInfo2()" style="padding:12px 6px; border:none; border-radius:10px; background:#1565c0; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">ℹ️ Assistente Info</button>
+        <button onclick="handleManualWp2()" style="padding:12px 6px; border:none; border-radius:10px; background:#ef6c00; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">🏁 Waypoint</button>
+        <button onclick="toggleMenuDrawer2()" style="padding:12px 6px; border:none; border-radius:10px; background:#37474f; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">☰ Menu</button>
     </div>
 
     <div id="sentiero2-save-modal" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #c62828; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <h3 style="margin:0; color:#ef9a9a; font-size:15px;">Salvataggio Percorso</h3>
-            <button onclick="closeSaveTrackModal2()" style="padding:4px 10px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer;">Annulla</button>
+            <h3 style="margin:0; color:#ef9a9a; font-size:16px;">Salvataggio Percorso</h3>
+            <button onclick="closeSaveTrackModal2()" style="padding:6px 12px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer; font-size:14px;">Annulla</button>
         </div>
-        <input id="track2-name-input" type="text" placeholder="Nome percorso (es. Giro nei campi)" style="width:100%; padding:9px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
-        <select id="save2-folder-select" style="width:100%; padding:9px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;"></select>
-        <input id="save2-new-folder-input" type="text" placeholder="Oppure nuova cartella..." style="width:100%; padding:9px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
-        <button onclick="handleSaveTrack2()" style="width:100%; padding:11px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer;">Conferma e Salva</button>
+        <input id="track2-name-input" type="text" placeholder="Nome percorso (es. Giro nei campi)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <select id="save2-folder-select" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;"></select>
+        <input id="save2-new-folder-input" type="text" placeholder="Oppure nuova cartella..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <button onclick="handleSaveTrack2()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Conferma e Salva</button>
     </div>
 
-    <div id="sentiero2-menu-drawer" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #546e7a; display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h3 style="margin:0; color:#90caf9; font-size:16px;">Menu SentieroVivo 2.0</h3>
-            <button onclick="toggleMenuDrawer2()" style="padding:4px 10px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer;">Chiudi</button>
+    <!-- Cassetto Menu a tutto schermo -->
+    <div id="sentiero2-menu-drawer" class="sv2-fullscreen-drawer" style="background:#151515; display:none;">
+        <div style="max-width:680px; margin:0 auto; padding-bottom:40px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; position:sticky; top:0; background:#151515; padding:8px 0; border-bottom:1px solid #333; z-index:2;">
+                <h2 style="margin:0; color:#90caf9; font-size:22px;">Menu SentieroVivo 2.0</h2>
+                <button onclick="toggleMenuDrawer2()" style="padding:9px 16px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">✕ Chiudi</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr; gap:9px; margin-bottom:16px;">
+                <button class="sv2-menu-big-btn" onclick="apriCartellaPercorsi2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">📁 Cartella percorsi</button>
+                <button class="sv2-menu-big-btn" onclick="menuRegistraVocale2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">🎙️ Registra un vocale</button>
+                <button class="sv2-menu-big-btn" onclick="menuRegistraVideo2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">🎥 Registra un video</button>
+                <button class="sv2-menu-big-btn" onclick="menuScattaFotoWaypoint2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">📸 Scatta foto e waypoint</button>
+                <button class="sv2-menu-big-btn" onclick="menuRitornoARitroso2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">↩️ Ritorno a ritroso</button>
+                <button class="sv2-menu-big-btn" onclick="menuCreaNuovoPercorsoRientro2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">🧭 Crea nuovo percorso di rientro</button>
+            </div>
+
+            <input id="wp2-note-input" type="text" placeholder="Testo nota vocale o didascalia media..." style="width:100%; padding:12px; border-radius:8px; border:1px solid #555; background:#262626; color:#fff; margin-bottom:14px; box-sizing:border-box; font-size:16px;">
+            <input id="wp2-photo-file" type="file" accept="image/*" capture="environment" onchange="handlePhotoWp2(event)" style="display:none;">
+            <input id="wp2-video-file" type="file" accept="video/*" capture="environment" onchange="handleVideoWp2(event)" style="display:none;">
+
+            <div style="border-top:1px solid #333; padding-top:14px; margin-bottom:16px;">
+                <div style="font-size:17px; color:#ffd54f; font-weight:bold; margin-bottom:10px;">Funzioni Esplorazione (stato salvato)</div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:#222; padding:10px 12px; border-radius:10px; margin-bottom:8px;">
+                    <button onclick="openPoiMenu2()" style="background:none; border:none; color:#fff; font-weight:bold; font-size:16px; text-align:left; cursor:pointer; flex:1;">📍 Cerca punti di interesse</button>
+                    <span id="toggle-status-poi" style="font-size:13px; font-weight:bold; margin-right:6px;">ATTIVATA</span>
+                    <button onclick="toggleMenu2Feature('poi')" style="padding:8px 11px; border:none; border-radius:7px; background:#455a64; color:#fff; font-size:13px; font-weight:bold; cursor:pointer;">Attiva / Disattiva</button>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:#222; padding:10px 12px; border-radius:10px; margin-bottom:8px;">
+                    <button onclick="menuStradeInMontagna2()" style="background:none; border:none; color:#fff; font-weight:bold; font-size:16px; text-align:left; cursor:pointer; flex:1;">🏔️ Strade in montagna</button>
+                    <span id="toggle-status-mountain" style="font-size:13px; font-weight:bold; margin-right:6px;">ATTIVATA</span>
+                    <button onclick="toggleMenu2Feature('mountainRoads')" style="padding:8px 11px; border:none; border-radius:7px; background:#455a64; color:#fff; font-size:13px; font-weight:bold; cursor:pointer;">Attiva / Disattiva</button>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:#222; padding:10px 12px; border-radius:10px;">
+                    <button onclick="menuMeteo24Ore2()" style="background:none; border:none; color:#fff; font-weight:bold; font-size:16px; text-align:left; cursor:pointer; flex:1;">🌦️ Meteo 24</button>
+                    <span id="toggle-status-meteo24" style="font-size:13px; font-weight:bold; margin-right:6px;">ATTIVATA</span>
+                    <button onclick="toggleMenu2Feature('meteo24')" style="padding:8px 11px; border:none; border-radius:7px; background:#455a64; color:#fff; font-size:13px; font-weight:bold; cursor:pointer;">Attiva / Disattiva</button>
+                </div>
+            </div>
+
+            <div style="border-top:1px solid #333; padding-top:14px;">
+                <div style="font-size:17px; color:#80cbc4; font-weight:bold; margin-bottom:10px;">Licenza e Gemini (protetti da password)</div>
+                <div style="display:grid; grid-template-columns:1fr; gap:8px;">
+                    <button class="sv2-menu-big-btn" onclick="apriGestioneLicenzaDaMenu2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🔑 Inserisci codice di licenza</button>
+                    <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('key')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">⚙️ Imposta chiave API Gemini</button>
+                    <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('model')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🤖 Imposta modello Gemini</button>
+                    <button class="sv2-menu-big-btn" onclick="mostraModelliGeminiDisponibili2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">📋 Mostra modelli disponibili</button>
+                    <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('key')" style="text-align:left; border:none; background:#1b5e20; color:#fff; font-weight:bold; cursor:pointer;">🔐 Inserisci chiave API e modello Gemini</button>
+                </div>
+
+                <div id="gemini-admin-panel" style="margin-top:12px; background:#222; padding:14px; border-radius:10px; border:1px solid #444; display:none;">
+                    <label style="display:block; font-size:14px; color:#ccc; margin-bottom:6px;">Chiave API Gemini:</label>
+                    <input id="gemini-api-key-input" type="password" placeholder="Incolla chiave API Gemini..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2e2e2e; color:#fff; margin-bottom:10px; box-sizing:border-box; font-size:15px;">
+                    <label style="display:block; font-size:14px; color:#ccc; margin-bottom:6px;">Modello Gemini:</label>
+                    <input id="gemini-model-input" type="text" placeholder="es. gemini-2.5-flash" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2e2e2e; color:#fff; margin-bottom:10px; box-sizing:border-box; font-size:15px;">
+                    <div id="gemini-models-list" style="display:none; margin-bottom:10px;"></div>
+                    <button onclick="salvaConfigurazioneGemini2()" style="width:100%; padding:11px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Salva Chiave API e Modello</button>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div style="display:grid; grid-template-columns:1fr; gap:7px; margin-bottom:12px;">
-            <button onclick="apriCartellaPercorsi2()" style="padding:10px; text-align:left; border:none; border-radius:8px; background:#2a2a2a; color:#fff; font-weight:bold; cursor:pointer;">📁 Cartella percorsi</button>
-            <button onclick="menuRegistraVocale2()" style="padding:10px; text-align:left; border:none; border-radius:8px; background:#2a2a2a; color:#fff; font-weight:bold; cursor:pointer;">🎙️ Registra un vocale</button>
-            <button onclick="menuRegistraVideo2()" style="padding:10px; text-align:left; border:none; border-radius:8px; background:#2a2a2a; color:#fff; font-weight:bold; cursor:pointer;">🎥 Registra un video</button>
-            <button onclick="menuScattaFotoWaypoint2()" style="padding:10px; text-align:left; border:none; border-radius:8px; background:#2a2a2a; color:#fff; font-weight:bold; cursor:pointer;">📸 Scatta foto e waypoint</button>
-            <button onclick="menuRitornoARitroso2()" style="padding:10px; text-align:left; border:none; border-radius:8px; background:#2a2a2a; color:#fff; font-weight:bold; cursor:pointer;">↩️ Ritorno a ritroso</button>
-            <button onclick="menuCreaNuovoPercorsoRientro2()" style="padding:10px; text-align:left; border:none; border-radius:8px; background:#2a2a2a; color:#fff; font-weight:bold; cursor:pointer;">🧭 Crea nuovo percorso di rientro</button>
-        </div>
-
-        <input id="wp2-note-input" type="text" placeholder="Testo nota vocale o didascalia media..." style="width:100%; padding:9px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:10px; box-sizing:border-box;">
-        <input id="wp2-photo-file" type="file" accept="image/*" capture="environment" onchange="handlePhotoWp2(event)" style="display:none;">
-        <input id="wp2-video-file" type="file" accept="video/*" capture="environment" onchange="handleVideoWp2(event)" style="display:none;">
-
-        <div style="border-top:1px solid #333; padding-top:10px; margin-bottom:12px;">
-            <div style="font-size:13px; color:#ffd54f; font-weight:bold; margin-bottom:8px;">Funzioni Esplorazione (stato salvato)</div>
-
-            <div style="display:flex; align-items:center; justify-content:space-between; background:#262626; padding:8px 10px; border-radius:8px; margin-bottom:6px;">
-                <button onclick="menuCercaPuntiInteresse2()" style="background:none; border:none; color:#fff; font-weight:bold; text-align:left; cursor:pointer; flex:1;">📍 Cerca punti di interesse</button>
-                <span id="toggle-status-poi" style="font-size:11px; font-weight:bold; margin-right:8px;">ATTIVATA</span>
-                <button onclick="toggleMenu2Feature('poi')" style="padding:5px 9px; border:none; border-radius:6px; background:#455a64; color:#fff; font-size:11px; cursor:pointer;">Attiva / Disattiva</button>
+    <!-- Menu Punti di Interesse (a tutto schermo, scorrevole) -->
+    <div id="sentiero2-poi-modal" class="sv2-fullscreen-drawer" style="background:#141816; display:none;">
+        <div style="max-width:680px; margin:0 auto; padding-bottom:40px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; position:sticky; top:0; background:#141816; padding:8px 0; border-bottom:1px solid #2e7d32; z-index:2;">
+                <h2 style="margin:0; color:#a5d6a7; font-size:21px;">📍 Punti di Interesse</h2>
+                <button onclick="closePoiMenu2()" style="padding:9px 16px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">✕ Chiudi</button>
             </div>
 
-            <div style="display:flex; align-items:center; justify-content:space-between; background:#262626; padding:8px 10px; border-radius:8px; margin-bottom:6px;">
-                <button onclick="menuStradeInMontagna2()" style="background:none; border:none; color:#fff; font-weight:bold; text-align:left; cursor:pointer; flex:1;">🏔️ Strade in montagna</button>
-                <span id="toggle-status-mountain" style="font-size:11px; font-weight:bold; margin-right:8px;">ATTIVATA</span>
-                <button onclick="toggleMenu2Feature('mountainRoads')" style="padding:5px 9px; border:none; border-radius:6px; background:#455a64; color:#fff; font-size:11px; cursor:pointer;">Attiva / Disattiva</button>
+            <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:14px;">
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('SENTIERI NELLE VICINANZE')">🥾 SENTIERI NELLE VICINANZE</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('RIFUGI CAI E NON')">🏔️ RIFUGI CAI E NON</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('RISTORANTI')">🍽️ RISTORANTI</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('PIZZERIE')">🍕 PIZZERIE</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('BAR & PUB')">🍺 BAR & PUB</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('HOTEL')">🏨 HOTEL</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('MOTEL')">🛣️ MOTEL</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('PENSIONI')">🏡 PENSIONI</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('B & B')">🛏️ B & B</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('DISTRIBUTORI BENZINA')">⛽ DISTRIBUTORI BENZINA</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('FARMACIE')">💊 FARMACIE</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('GOMMISTI')">🛞 GOMMISTI</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('PUNTI DI INFORMAZIONI')">ℹ️ PUNTI DI INFORMAZIONI</button>
             </div>
 
-            <div style="display:flex; align-items:center; justify-content:space-between; background:#262626; padding:8px 10px; border-radius:8px;">
-                <button onclick="menuMeteo24Ore2()" style="background:none; border:none; color:#fff; font-weight:bold; text-align:left; cursor:pointer; flex:1;">🌦️ Meteo 24</button>
-                <span id="toggle-status-meteo24" style="font-size:11px; font-weight:bold; margin-right:8px;">ATTIVATA</span>
-                <button onclick="toggleMenu2Feature('meteo24')" style="padding:5px 9px; border:none; border-radius:6px; background:#455a64; color:#fff; font-size:11px; cursor:pointer;">Attiva / Disattiva</button>
-            </div>
-        </div>
-
-        <div style="border-top:1px solid #333; padding-top:10px;">
-            <div style="font-size:13px; color:#80cbc4; font-weight:bold; margin-bottom:8px;">Licenza e Gemini (protetti da password)</div>
-            <div style="display:grid; grid-template-columns:1fr; gap:6px;">
-                <button onclick="apriGestioneLicenzaDaMenu2()" style="padding:9px; text-align:left; border:none; border-radius:8px; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🔑 Inserisci codice di licenza</button>
-                <button onclick="apriPannelloGeminiProtetto2('key')" style="padding:9px; text-align:left; border:none; border-radius:8px; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">⚙️ Imposta chiave API Gemini</button>
-                <button onclick="apriPannelloGeminiProtetto2('model')" style="padding:9px; text-align:left; border:none; border-radius:8px; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🤖 Imposta modello Gemini</button>
-                <button onclick="mostraModelliGeminiDisponibili2()" style="padding:9px; text-align:left; border:none; border-radius:8px; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">📋 Mostra modelli disponibili</button>
-                <button onclick="apriPannelloGeminiProtetto2('key')" style="padding:9px; text-align:left; border:none; border-radius:8px; background:#1b5e20; color:#fff; font-weight:bold; cursor:pointer;">🔐 Inserisci chiave API e modello Gemini</button>
-            </div>
-
-            <div id="gemini-admin-panel" style="margin-top:10px; background:#222; padding:12px; border-radius:8px; border:1px solid #444; display:none;">
-                <label style="display:block; font-size:12px; color:#ccc; margin-bottom:4px;">Chiave API Gemini:</label>
-                <input id="gemini-api-key-input" type="password" placeholder="Incolla chiave API Gemini..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #555; background:#2e2e2e; color:#fff; margin-bottom:8px; box-sizing:border-box;">
-                <label style="display:block; font-size:12px; color:#ccc; margin-bottom:4px;">Modello Gemini:</label>
-                <input id="gemini-model-input" type="text" placeholder="es. gemini-2.5-flash" style="width:100%; padding:8px; border-radius:6px; border:1px solid #555; background:#2e2e2e; color:#fff; margin-bottom:8px; box-sizing:border-box;">
-                <div id="gemini-models-list" style="display:none; margin-bottom:8px;"></div>
-                <button onclick="salvaConfigurazioneGemini2()" style="width:100%; padding:9px; border:none; border-radius:6px; background:#2e7d32; color:#fff; font-weight:bold; cursor:pointer;">Salva Chiave API e Modello</button>
+            <div id="poi-results-box" style="background:#1e2421; border:1px solid #37474f; border-radius:10px; padding:12px; font-size:15px; color:#eceff1;">
+                Seleziona una categoria qui sopra per cercare i punti di interesse nelle vicinanze con nome, indirizzo e telefono.
             </div>
         </div>
     </div>
 
     <div id="sentiero2-archivio-modal" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #90caf9; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <h3 style="margin:0; color:#90caf9; font-size:15px;">Archivio Percorsi Salvati</h3>
-            <button onclick="document.getElementById('sentiero2-archivio-modal').style.display='none'" style="padding:4px 10px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer;">Chiudi</button>
+            <h3 style="margin:0; color:#90caf9; font-size:16px;">Archivio Percorsi Salvati</h3>
+            <button onclick="document.getElementById('sentiero2-archivio-modal').style.display='none'" style="padding:6px 12px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer; font-size:14px;">Chiudi</button>
         </div>
-        <div id="saved-tracks2-list" style="font-size:13px; color:#ccc;">Nessun percorso salvato al momento.</div>
+        <div id="saved-tracks2-list" style="font-size:14px; color:#ccc;">Nessun percorso salvato al momento.</div>
     </div>
 
     <div id="folder-setup-panel" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:12px; border-radius:12px; border:1px solid #333; display:none;">
-        <input id="default-folder-input" type="text" value="Trekking" style="width:100%; padding:8px; border-radius:6px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box;">
-        <button onclick="handleSaveFolder()" style="width:100%; padding:9px; border:none; border-radius:6px; background:#ff8f00; color:#121212; font-weight:bold; cursor:pointer;">Conferma Cartella Principale</button>
-        <p id="folder-feedback" style="margin:6px 0 0 0; font-size:12px; color:#a5d6a7;"></p>
+        <input id="default-folder-input" type="text" value="Trekking" style="width:100%; padding:9px; border-radius:6px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <button onclick="handleSaveFolder()" style="width:100%; padding:10px; border:none; border-radius:6px; background:#ff8f00; color:#121212; font-weight:bold; font-size:15px; cursor:pointer;">Conferma Cartella Principale</button>
+        <p id="folder-feedback" style="margin:6px 0 0 0; font-size:13px; color:#a5d6a7;"></p>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -220,10 +299,139 @@
         function toggleMenuDrawer2() {
             const el = document.getElementById('sentiero2-menu-drawer');
             if (!el) return;
-            const next = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
-            el.style.display = next;
-            if (next === 'block' && typeof renderMenu2TogglesUi === 'function') {
-                renderMenu2TogglesUi();
+            const isOpen = (el.style.display === 'block');
+            el.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen) {
+                el.scrollTop = 0;
+                if (typeof renderMenu2TogglesUi === 'function') {
+                    renderMenu2TogglesUi();
+                }
+            } else if (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.invalidateSize === 'function') {
+                setTimeout(() => sentieroMap.invalidateSize(), 100);
+            }
+        }
+
+        function openPoiMenu2() {
+            const menuEl = document.getElementById('sentiero2-menu-drawer');
+            const poiEl = document.getElementById('sentiero2-poi-modal');
+            if (menuEl) menuEl.style.display = 'none';
+            if (poiEl) {
+                poiEl.style.display = 'block';
+                poiEl.scrollTop = 0;
+            }
+        }
+
+        function closePoiMenu2() {
+            const poiEl = document.getElementById('sentiero2-poi-modal');
+            const menuEl = document.getElementById('sentiero2-menu-drawer');
+            if (poiEl) poiEl.style.display = 'none';
+            if (menuEl) menuEl.style.display = 'block';
+        }
+
+        function getPoiSearchCenter2() {
+            if (typeof track2Coordinates !== 'undefined' && Array.isArray(track2Coordinates) && track2Coordinates.length > 0) {
+                const last = track2Coordinates[track2Coordinates.length - 1];
+                if (Array.isArray(last) && last.length >= 2) {
+                    return { lat: Number(last[0]), lon: Number(last[1]) };
+                }
+            }
+            if (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.getCenter === 'function') {
+                const c = sentieroMap.getCenter();
+                return { lat: c.lat, lon: c.lng };
+            }
+            return { lat: 43.5485, lon: 10.4225 };
+        }
+
+        function buildPoiOverpassFilter2(category, lat, lon, radius) {
+            const around = `(around:${radius},${lat},${lon})`;
+            switch (category) {
+                case 'SENTIERI NELLE VICINANZE':
+                    return `(way["route"="hiking"]${around};relation["route"="hiking"]${around};way["highway"="path"]${around};)`;
+                case 'RIFUGI CAI E NON':
+                    return `(node["tourism"="alpine_hut"]${around};way["tourism"="alpine_hut"]${around};node["tourism"="wilderness_hut"]${around};way["tourism"="wilderness_hut"]${around};)`;
+                case 'RISTORANTI':
+                    return `(node["amenity"="restaurant"]${around};way["amenity"="restaurant"]${around};)`;
+                case 'PIZZERIE':
+                    return `(node["amenity"="restaurant"]["cuisine"~"pizza",i]${around};way["amenity"="restaurant"]["cuisine"~"pizza",i]${around};node["amenity"="fast_food"]["cuisine"~"pizza",i]${around};)`;
+                case 'BAR & PUB':
+                    return `(node["amenity"~"bar|pub|cafe"]${around};way["amenity"~"bar|pub|cafe"]${around};)`;
+                case 'HOTEL':
+                    return `(node["tourism"="hotel"]${around};way["tourism"="hotel"]${around};)`;
+                case 'MOTEL':
+                    return `(node["tourism"="motel"]${around};way["tourism"="motel"]${around};)`;
+                case 'PENSIONI':
+                    return `(node["tourism"="guest_house"]${around};way["tourism"="guest_house"]${around};)`;
+                case 'B & B':
+                    return `(node["tourism"~"bed_and_breakfast|guest_house"]${around};way["tourism"~"bed_and_breakfast|guest_house"]${around};)`;
+                case 'DISTRIBUTORI BENZINA':
+                    return `(node["amenity"="fuel"]${around};way["amenity"="fuel"]${around};)`;
+                case 'FARMACIE':
+                    return `(node["amenity"="pharmacy"]${around};way["amenity"="pharmacy"]${around};)`;
+                case 'GOMMISTI':
+                    return `(node["shop"="tyres"]${around};way["shop"="tyres"]${around};node["craft"="tyres"]${around};)`;
+                case 'PUNTI DI INFORMAZIONI':
+                    return `(node["information"]${around};way["information"]${around};node["tourism"="information"]${around};)`;
+                default:
+                    return `(node${around};way${around};)`;
+            }
+        }
+
+        async function searchPoiCategory2(category) {
+            const box = document.getElementById('poi-results-box');
+            if (!box) return;
+            box.innerHTML = `<div style="color:#ffd54f; font-weight:bold;">Ricerca in corso per "${category}"...</div>`;
+
+            const center = getPoiSearchCenter2();
+            const radius = 5000;
+            const filter = buildPoiOverpassFilter2(category, center.lat, center.lon, radius);
+            const query = `[out:json][timeout:15];${filter}out center 25;`;
+
+            try {
+                const resp = await fetch('https://overpass-api.de/api/interpreter', {
+                    method: 'POST',
+                    body: 'data=' + encodeURIComponent(query)
+                });
+                const data = await resp.json();
+                const elements = Array.isArray(data.elements) ? data.elements : [];
+
+                const items = elements.map((el) => {
+                    const tags = el.tags || {};
+                    const name = tags.name || tags['ref'] || tags['operator'] || (category === 'SENTIERI NELLE VICINANZE' ? 'Sentiero locale' : 'Punto senza nome');
+                    const street = tags['addr:street'] || '';
+                    const houseNumber = tags['addr:housenumber'] || '';
+                    const city = tags['addr:city'] || tags['addr:town'] || tags['addr:village'] || '';
+                    const address = [street, houseNumber, city].filter(Boolean).join(', ') || tags['addr:full'] || 'Indirizzo non disponibile';
+                    const phone = tags.phone || tags['contact:phone'] || tags['phone:mobile'] || 'Telefono non disponibile';
+                    return { name, address, phone };
+                });
+
+                const uniqueItems = [];
+                const seen = new Set();
+                for (const it of items) {
+                    const key = `${it.name}|${it.address}|${it.phone}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        uniqueItems.push(it);
+                    }
+                }
+
+                if (!uniqueItems.length) {
+                    box.innerHTML = `<div style="color:#ffcc80;">Nessun risultato trovato entro 5 km per <strong>${category}</strong>.</div>`;
+                    return;
+                }
+
+                box.innerHTML = `
+                    <div style="font-weight:bold; color:#a5d6a7; margin-bottom:10px; font-size:16px;">${category} (${uniqueItems.length} trovati entro 5 km)</div>
+                    ${uniqueItems.map((p) => `
+                        <div style="background:#262d2a; border:1px solid #3f534b; border-radius:9px; padding:11px; margin-bottom:9px;">
+                            <div style="font-size:16px; font-weight:bold; color:#ffffff; margin-bottom:4px;">• ${p.name}</div>
+                            <div style="font-size:14px; color:#cfd8dc; margin-bottom:3px;">📍 Indirizzo: ${p.address}</div>
+                            <div style="font-size:14px; color:#80cbc4;">📞 Telefono: ${p.phone}</div>
+                        </div>
+                    `).join('')}
+                `;
+            } catch (err) {
+                box.innerHTML = `<div style="color:#ef9a9a;">Impossibile completare la ricerca online al momento. Controlla la connessione internet e riprova.</div>`;
             }
         }
 
@@ -441,6 +649,10 @@
                 originalStartGps2();
                 if (navigator.geolocation) {
                     navigator.geolocation.watchPosition((pos) => {
+                        const dot = document.getElementById('gps-status-dot');
+                        const txt = document.getElementById('gps-status-text');
+                        if (dot) dot.style.background = '#4caf50';
+                        if (txt) txt.innerText = 'GPS attivo';
                         if (typeof recordTrack2Point === 'function') {
                             recordTrack2Point(pos.coords.latitude, pos.coords.longitude);
                         }
