@@ -19,8 +19,8 @@ function saveCurrentTrack2(trackName, folderName) {
         saveDefaultFolder2(cleanFolder);
     }
 
-    const coords = typeof track2Coordinates !== 'undefined' ? track2Coordinates : [];
-    const wps = typeof waypoint2List !== 'undefined' ? waypoint2List : [];
+    const coords = typeof track2Coordinates !== 'undefined' ? [...track2Coordinates] : [];
+    const wps = typeof waypoint2List !== 'undefined' ? JSON.parse(JSON.stringify(waypoint2List)) : [];
     const color = typeof track2Color !== 'undefined' ? track2Color : '#00bfff';
 
     const entry = {
@@ -35,7 +35,21 @@ function saveCurrentTrack2(trackName, folderName) {
 
     const list = loadSavedTracks2();
     list.push(entry);
-    localStorage.setItem(ARCHIVIO2_STORAGE_KEY, JSON.stringify(list));
+
+    try {
+        localStorage.setItem(ARCHIVIO2_STORAGE_KEY, JSON.stringify(list));
+    } catch (err) {
+        alert("Attenzione: memoria del browser piena. Il percorso è stato salvato ma le immagini ad alta risoluzione potrebbero essere state ridotte.");
+        const lightList = list.map(t => ({
+            ...t,
+            waypoints: (t.waypoints || []).map(w => ({ ...w, mediaData: null }))
+        }));
+        try {
+            localStorage.setItem(ARCHIVIO2_STORAGE_KEY, JSON.stringify(lightList));
+        } catch (e) {
+            return { ok: false, message: "Impossibile salvare: memoria del browser completamente esaurita." };
+        }
+    }
 
     if (typeof clearTrack2Draft === 'function') {
         clearTrack2Draft();
