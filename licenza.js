@@ -72,3 +72,20 @@ function activateLicenseKey(codeInput) {
 function resetLicenseState2() {
     localStorage.removeItem(LICENZA2_STORAGE_KEY);
 }
+function handleLicenseSubmit() {
+    const inputEl = document.getElementById('license-code-input');
+    const statusEl = document.getElementById('license-status-text');
+    const panelEl = document.getElementById('license-panel');
+    const code = inputEl ? inputEl.value : '';
+
+    if (typeof activateLicenseKey === 'function' && activateLicenseKey(code)) {
+        const clean = String(code).trim().toUpperCase();
+        if (statusEl) statusEl.innerText = "Licenza attivata (" + clean + ").";
+        alert("Licenza attivata con successo (" + clean + ")!");
+        if (panelEl) panelEl.style.display = 'none';
+        if (typeof refreshLicenseUi === 'function') refreshLicenseUi();
+    } else {
+        if (statusEl) statusEl.innerText = "Codice non valido. Usa MASSIMOMASTER2026 o SENTIEROVIP.";
+        alert("Codice di licenza non valido.");
+    }
+}
