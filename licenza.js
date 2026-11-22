@@ -1,8 +1,11 @@
 const LICENZA2_STORAGE_KEY = 'sentierovivo2_license_state';
 const LICENZA2_TRIAL_DAYS = 30;
 const LICENZA2_VALID_KEYS = [
+    'SENTIEROVIP2026',
     'MASSIMOMASTER2026',
-    'SENTIEROVIP'
+    'SENTIEROVIP',
+    'MASSIMO2026',
+    'SENTIERO2026'
 ];
 
 function getTodayDateString2() {
@@ -72,20 +75,29 @@ function activateLicenseKey(codeInput) {
 function resetLicenseState2() {
     localStorage.removeItem(LICENZA2_STORAGE_KEY);
 }
+
 function handleLicenseSubmit() {
     const inputEl = document.getElementById('license-code-input');
     const statusEl = document.getElementById('license-status-text');
     const panelEl = document.getElementById('license-panel');
     const code = inputEl ? inputEl.value : '';
 
-    if (typeof activateLicenseKey === 'function' && activateLicenseKey(code)) {
+    if (activateLicenseKey(code)) {
         const clean = String(code).trim().toUpperCase();
-        if (statusEl) statusEl.innerText = "Licenza attivata (" + clean + ").";
+        if (statusEl) {
+            statusEl.innerText = "Licenza attivata (" + clean + ").";
+        }
         alert("Licenza attivata con successo (" + clean + ")!");
-        if (panelEl) panelEl.style.display = 'none';
-        if (typeof refreshLicenseUi === 'function') refreshLicenseUi();
+        if (panelEl) {
+            panelEl.style.display = 'none';
+        }
+        if (typeof refreshLicenseUi === 'function') {
+            refreshLicenseUi();
+        }
     } else {
-        if (statusEl) statusEl.innerText = "Codice non valido. Usa MASSIMOMASTER2026 o SENTIEROVIP.";
+        if (statusEl) {
+            statusEl.innerText = "Codice non valido. Usa ad esempio SENTIEROVIP2026 o MASSIMOMASTER2026.";
+        }
         alert("Codice di licenza non valido.");
     }
 }
