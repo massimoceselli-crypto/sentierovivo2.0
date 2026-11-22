@@ -8,6 +8,7 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%232e7d32'/><polygon points='50,20 80,75 20,75' fill='%23ffffff'/></svg>">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
+        /* Animazione Tasto SOS */
         @keyframes sosPulse2 {
             0% { background-color: #d32f2f; box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.85); }
             50% { background-color: #ff1744; box-shadow: 0 0 14px 4px rgba(255, 23, 68, 0.7); }
@@ -15,29 +16,23 @@
         }
         .sos-blink-btn { animation: sosPulse2 1.2s infinite; }
 
-        @keyframes gpsPulseGreen2 {
-            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.95); }
-            50% { opacity: 0.2; box-shadow: 0 0 14px 6px rgba(76, 175, 80, 0.75); }
-            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.95); }
+        /* Animazioni Pallino GPS Pulsante/Intermittente */
+        @keyframes gpsBlinkGreen {
+            0% { background-color: #4caf50; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.9); opacity: 1; }
+            50% { background-color: #81c784; box-shadow: 0 0 12px 5px rgba(76, 175, 80, 0.6); opacity: 0.3; }
+            100% { background-color: #4caf50; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.9); opacity: 1; }
         }
-        @keyframes gpsPulseAmber2 {
-            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.95); }
-            50% { opacity: 0.2; box-shadow: 0 0 14px 6px rgba(255, 193, 7, 0.65); }
-            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.95); }
+        @keyframes gpsBlinkAmber {
+            0% { background-color: #ffc107; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.9); opacity: 1; }
+            50% { background-color: #ffe082; box-shadow: 0 0 12px 5px rgba(255, 193, 7, 0.6); opacity: 0.3; }
+            100% { background-color: #ffc107; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.9); opacity: 1; }
         }
-        #gps-status-dot.gps-active {
-            background-color: #4caf50 !important;
-            animation-name: gpsPulseGreen2 !important;
-            animation-duration: 0.95s !important;
-            animation-iteration-count: infinite !important;
-            animation-timing-function: ease-in-out !important;
+
+        .gps-active {
+            animation: gpsBlinkGreen 1s infinite ease-in-out !important;
         }
-        #gps-status-dot.gps-waiting {
-            background-color: #ffc107 !important;
-            animation-name: gpsPulseAmber2 !important;
-            animation-duration: 1.1s !important;
-            animation-iteration-count: infinite !important;
-            animation-timing-function: ease-in-out !important;
+        .gps-waiting {
+            animation: gpsBlinkAmber 1.2s infinite ease-in-out !important;
         }
 
         .sv2-fullscreen-drawer {
@@ -70,16 +65,17 @@
         <button onclick="handleLicenseSubmit()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Attiva Licenza</button>
     </div>
 
+    <!-- Barra Superiore GPS e SOS -->
     <div id="sv2-top-bar" style="max-width:520px; margin:6px auto 10px auto; display:flex; align-items:center; justify-content:space-between; gap:10px; background:#1c1c1c; padding:10px 12px; border-radius:12px; border:1px solid #333;">
         <div onclick="startGpsTrackingNow2()" style="display:flex; align-items:center; gap:9px; min-width:0; flex:1; cursor:pointer;" title="Tocca per riprovare il GPS">
-            <span id="gps-status-dot" class="gps-waiting" style="display:inline-block; width:15px; height:15px; border-radius:50%; flex-shrink:0;"></span>
+            <span id="gps-status-dot" class="gps-waiting" style="display:inline-block; width:16px; height:16px; border-radius:50%; flex-shrink:0;"></span>
             <span id="gps-status-text" style="font-size:14px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GPS in attesa...</span>
         </div>
         <span id="track2-status-label" style="font-size:12px; color:#81c784; white-space:nowrap;">Pronto</span>
         <button class="sos-blink-btn" onclick="toggleSosPanel2()" style="padding:8px 14px; border:none; border-radius:8px; color:#ffffff; font-weight:bold; font-size:14px; cursor:pointer; flex-shrink:0;">SOS</button>
     </div>
 
-    <!-- Pannello Assistente Info con Microfono e Interruttore Voce ON/OFF -->
+    <!-- Pannello Assistente Info -->
     <div id="sv2-assistant-panel" style="max-width:520px; margin:8px auto 10px auto; background:#182433; padding:14px; border-radius:12px; border:1px solid #1e88e5; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
             <h3 style="margin:0; color:#90caf9; font-size:17px;">ℹ️ Assistente Info</h3>
@@ -106,6 +102,7 @@
         </div>
     </div>
 
+    <!-- Pannello SOS -->
     <div id="sos-setup-panel" style="max-width:520px; margin:8px auto 10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #d32f2f; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h3 style="margin:0; color:#ff8a80; font-size:16px;">Contatti Emergenza S.O.S.</h3>
@@ -118,10 +115,12 @@
         <p id="sos-feedback" style="margin:8px 0 0 0; font-size:13px; color:#ffcc80;"></p>
     </div>
 
+    <!-- Mappa -->
     <div id="sv2-map-wrap" style="max-width:520px; margin:0 auto 10px auto;">
         <div id="map2" style="width:100%; height:62vh; min-height:340px; border-radius:12px; border:2px solid #2e7d32; overflow:hidden; background:#1b2620;"></div>
     </div>
 
+    <!-- Pulsanti Principali -->
     <div id="sv2-main-buttons" style="max-width:520px; margin:0 auto 12px auto; display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
         <button onclick="handleStartTrack2()" style="padding:12px 6px; border:none; border-radius:10px; background:#2e7d32; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">▶️ Avvia</button>
         <button id="btn-pause-track2" onclick="handlePauseTrack2()" style="padding:12px 6px; border:none; border-radius:10px; background:#455a64; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">⏸️ Pausa</button>
@@ -131,6 +130,7 @@
         <button onclick="toggleMenuDrawer2()" style="padding:12px 6px; border:none; border-radius:10px; background:#37474f; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">☰ Menu</button>
     </div>
 
+    <!-- Modal Salvataggio -->
     <div id="sentiero2-save-modal" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #c62828; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h3 style="margin:0; color:#ef9a9a; font-size:16px;">Salvataggio Percorso</h3>
@@ -142,7 +142,7 @@
         <button onclick="handleSaveTrack2()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Conferma e Salva</button>
     </div>
 
-    <!-- Menu Principale a Tutto Schermo -->
+    <!-- Menu Drawer -->
     <div id="sentiero2-menu-drawer" class="sv2-fullscreen-drawer" style="background:#151515; display:none;">
         <div style="max-width:680px; margin:0 auto; padding-bottom:40px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; position:sticky; top:0; background:#151515; padding:10px 0; border-bottom:1px solid #333; z-index:2;">
@@ -184,7 +184,7 @@
         </div>
     </div>
 
-    <!-- Menu Punti di Interesse -->
+    <!-- Modal Punti di Interesse -->
     <div id="sentiero2-poi-modal" class="sv2-fullscreen-drawer" style="background:#141816; display:none;">
         <div style="max-width:680px; margin:0 auto; padding-bottom:40px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; position:sticky; top:0; background:#141816; padding:10px 0; border-bottom:1px solid #2e7d32; z-index:3;">
@@ -215,6 +215,7 @@
         </div>
     </div>
 
+    <!-- Modal Archivio -->
     <div id="sentiero2-archivio-modal" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #90caf9; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h3 style="margin:0; color:#90caf9; font-size:16px;">Archivio Percorsi Salvati</h3>
@@ -294,8 +295,7 @@
             const dot = document.getElementById('gps-status-dot');
             const txt = document.getElementById('gps-status-text');
             if (dot) {
-                dot.classList.remove('gps-active', 'gps-waiting');
-                dot.classList.add(active ? 'gps-active' : 'gps-waiting');
+                dot.className = active ? 'gps-active' : 'gps-waiting';
             }
             if (txt && labelText) {
                 txt.innerText = labelText;
@@ -388,7 +388,6 @@
                 return;
             }
 
-            // 1. Richiesta rapida iniziale per sbloccare subito il primo fix
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude);
@@ -399,7 +398,6 @@
                 { enableHighAccuracy: false, maximumAge: 60000, timeout: 6000 }
             );
 
-            // 2. Monitoraggio continuo
             if (gpsWatchId2 !== null) {
                 navigator.geolocation.clearWatch(gpsWatchId2);
             }
@@ -412,6 +410,43 @@
                 },
                 { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
             );
+        }
+
+        function handleAudioWp2() {
+            if (typeof track2Active !== 'undefined' && !track2Active) { 
+                alert("Avvia prima la registrazione del percorso."); 
+                return; 
+            }
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRec) {
+                const rec = new SpeechRec();
+                rec.lang = 'it-IT';
+                rec.interimResults = false;
+                rec.start();
+                alert("Microfono attivo: parla adesso per registrare la nota vocale del waypoint.");
+                rec.onresult = function(event) {
+                    const testoParlato = event.results?.[0]?.[0]?.transcript || "";
+                    if (testoParlato) {
+                        const idx = (typeof addAudioWaypoint2 === 'function') ? addAudioWaypoint2(testoParlato) : 1;
+                        alert("Nota vocale registrata #" + idx + ":\n\"" + testoParlato + "\"");
+                    } else {
+                        alert("Nessun testo rilevato dalla voce.");
+                    }
+                };
+                rec.onerror = function() {
+                    const fallbackText = prompt("Impossibile accedere al microfono. Scrivi a mano la nota del waypoint:");
+                    if (fallbackText) {
+                        const idx = (typeof addAudioWaypoint2 === 'function') ? addAudioWaypoint2(fallbackText) : 1;
+                        alert("Nota salvata #" + idx + ".");
+                    }
+                };
+            } else {
+                const fallbackText = prompt("Riconoscimento vocale non supportato da questo browser. Scrivi la nota:");
+                if (fallbackText) {
+                    const idx = (typeof addAudioWaypoint2 === 'function') ? addAudioWaypoint2(fallbackText) : 1;
+                    alert("Nota salvata #" + idx + ".");
+                }
+            }
         }
 
         function refreshAssistantSummary2() {
@@ -907,15 +942,6 @@
             if (!track2Active) { alert("Avvia prima la registrazione del percorso."); return; }
             const idx = addManualWaypoint2();
             alert("Bandierina manuale #" + idx + " inserita.");
-        }
-
-        function handleAudioWp2() {
-            if (!track2Active) { alert("Avvia prima la registrazione del percorso."); return; }
-            const txt = document.getElementById('wp2-note-input').value.trim();
-            const finalNote = txt || prompt("Scrivi o incolla il testo della nota vocale:") || "";
-            const idx = addAudioWaypoint2(finalNote);
-            document.getElementById('wp2-note-input').value = "";
-            alert("Nota vocale #" + idx + " salvata.");
         }
 
         function handlePhotoWp2(event) {
