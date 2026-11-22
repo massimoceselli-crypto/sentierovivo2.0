@@ -16,13 +16,21 @@ function cambiaChiaveLicenza2(nuovaChiave) {
 }
 
 function mostraPannelloCambioChiave2() {
+    const menuEl = document.getElementById('sentiero2-menu-drawer');
+    if (menuEl) menuEl.style.display = 'none';
+
     const panel = document.getElementById('license-panel');
     const statusText = document.getElementById('license-status-text');
     const input = document.getElementById('license-code-input');
-    if (panel) panel.style.display = 'block';
-    if (statusText) statusText.innerText = "Inserisci la tua Master Key (MASSIMOMASTER2026) per aggiornare la chiave attiva:";
+    if (panel) {
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    if (statusText) {
+        statusText.innerText = "Password verificata. Inserisci il codice di licenza:";
+    }
     if (input) {
         input.value = "";
-        input.focus();
+        setTimeout(() => input.focus(), 120);
     }
 }
