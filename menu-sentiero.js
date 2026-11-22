@@ -172,11 +172,17 @@ function richiediPasswordAdminMenu2() {
 
 function apriGestioneLicenzaDaMenu2() {
     if (!richiediPasswordAdminMenu2()) return;
+    const menuEl = document.getElementById('sentiero2-menu-drawer');
+    if (menuEl) menuEl.style.display = 'none';
+
     if (typeof mostraPannelloCambioChiave2 === 'function') {
         mostraPannelloCambioChiave2();
     } else {
         const panel = document.getElementById('license-panel');
-        if (panel) panel.style.display = 'block';
+        if (panel) {
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 }
 
@@ -215,6 +221,9 @@ function chiudiPannelloGemini2() {
 
 function apriPannelloGeminiProtetto2(focusField) {
     if (!richiediPasswordAdminMenu2()) return;
+    const menuEl = document.getElementById('sentiero2-menu-drawer');
+    if (menuEl) menuEl.style.display = 'none';
+
     const box = assicuraPannelloGeminiEsistente2();
     box.style.display = 'block';
     box.scrollTop = 0;
@@ -245,6 +254,9 @@ function renderGeminiModelsButtons2(modelsArray, intestazione) {
 
 async function mostraModelliGeminiDisponibili2() {
     if (!richiediPasswordAdminMenu2()) return;
+    const menuEl = document.getElementById('sentiero2-menu-drawer');
+    if (menuEl) menuEl.style.display = 'none';
+
     const box = assicuraPannelloGeminiEsistente2();
     box.style.display = 'block';
     box.scrollTop = 0;
@@ -300,7 +312,11 @@ function getGeminiConfig2() {
         const raw = localStorage.getItem(MENU2_GEMINI_CONFIG_KEY);
         if (!raw) return { apiKey: '', model: 'gemini-2.5-flash' };
         const parsed = JSON.parse(raw);
-        return { apiKey: (parsed.apiKey || '').trim(), model: (parsed.model || '').trim() || 'gemini-2.5-flash' };
+        let m = (parsed.model || '').trim().replace(/^models\//i, '');
+        if (!m || m.includes(' ') || m.includes('1.5')) {
+            m = 'gemini-2.5-flash';
+        }
+        return { apiKey: (parsed.apiKey || '').trim(), model: m };
     } catch (err) {
         return { apiKey: '', model: 'gemini-2.5-flash' };
     }
@@ -322,7 +338,10 @@ function salvaConfigurazioneGemini2() {
     const kInp = document.getElementById('gemini-api-key-input');
     const mInp = document.getElementById('gemini-model-input');
     const apiKey = kInp ? kInp.value.trim() : '';
-    const model = (mInp ? mInp.value.trim() : '') || 'gemini-2.5-flash';
+    let model = mInp ? mInp.value.trim().replace(/^models\//i, '') : '';
+    if (!model || model.includes(' ') || model.includes('1.5')) {
+        model = 'gemini-2.5-flash';
+    }
     localStorage.setItem(MENU2_GEMINI_CONFIG_KEY, JSON.stringify({ apiKey, model }));
     alert(`Configurazione Gemini salvata.\nModello attivo: ${model}`);
     chiudiPannelloGemini2();
