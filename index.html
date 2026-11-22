@@ -64,7 +64,7 @@
     <div id="license-panel" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:2px solid #2e7d32; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <strong style="color:#a5d6a7; font-size:15px;">🔑 Attivazione Codice Licenza</strong>
-            <button onclick="document.getElementById('license-panel').style.display='none'" style="padding:5px 10px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer; font-size:13px;">Chiudi</button>
+            <button onclick="document.getElementById('license-panel').style.display='none'" style="padding:5px 10px; border:none; border-radius:6px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:13px;">Chiudi</button>
         </div>
         <p id="license-status-text" style="margin:0 0 10px 0; font-size:14px; color:#eceff1;">Inserisci il codice di licenza per attivare l'applicazione.</p>
         <input id="license-code-input" type="text" placeholder="Inserisci codice di sblocco..." style="width:100%; padding:11px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:10px; box-sizing:border-box; font-size:15px;">
@@ -85,7 +85,7 @@
             <h3 style="margin:0; color:#90caf9; font-size:17px;">ℹ️ Assistente Info</h3>
             <div style="display:flex; gap:8px; align-items:center;">
                 <button id="btn-voice-toggle2" onclick="toggleAssistantVoice2()" style="padding:7px 12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">🔊 Voce: ON</button>
-                <button onclick="closeAssistantInfo2()" style="padding:7px 12px; border:none; border-radius:8px; background:#424242; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">✕ Chiudi</button>
+                <button onclick="closeAssistantInfo2()" style="padding:7px 12px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">✕ Chiudi</button>
             </div>
         </div>
 
@@ -109,7 +109,7 @@
     <div id="sos-setup-panel" style="max-width:520px; margin:8px auto 10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #d32f2f; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h3 style="margin:0; color:#ff8a80; font-size:16px;">Contatti Emergenza S.O.S.</h3>
-            <button onclick="toggleSosPanel2()" style="padding:6px 12px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer; font-size:14px;">Chiudi</button>
+            <button onclick="toggleSosPanel2()" style="padding:6px 12px; border:none; border-radius:6px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:14px;">Chiudi</button>
         </div>
         <input id="sos-name-input" type="text" placeholder="Il tuo nome e cognome" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
         <input id="sos-c1-input" type="text" placeholder="Contatto 1 (obbligatorio)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
@@ -134,7 +134,7 @@
     <div id="sentiero2-save-modal" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #c62828; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h3 style="margin:0; color:#ef9a9a; font-size:16px;">Salvataggio Percorso</h3>
-            <button onclick="closeSaveTrackModal2()" style="padding:6px 12px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer; font-size:14px;">Annulla</button>
+            <button onclick="closeSaveTrackModal2()" style="padding:6px 12px; border:none; border-radius:6px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:14px;">Chiudi</button>
         </div>
         <input id="track2-name-input" type="text" placeholder="Nome percorso (es. Giro nei campi)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
         <select id="save2-folder-select" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;"></select>
@@ -216,7 +216,7 @@
     <div id="sentiero2-archivio-modal" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #90caf9; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h3 style="margin:0; color:#90caf9; font-size:16px;">Archivio Percorsi Salvati</h3>
-            <button onclick="document.getElementById('sentiero2-archivio-modal').style.display='none'" style="padding:6px 12px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer; font-size:14px;">Chiudi</button>
+            <button onclick="document.getElementById('sentiero2-archivio-modal').style.display='none'" style="padding:6px 12px; border:none; border-radius:6px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:14px;">Chiudi</button>
         </div>
         <div id="saved-tracks2-list" style="font-size:14px; color:#ccc;">Nessun percorso salvato al momento.</div>
     </div>
@@ -891,7 +891,7 @@
                 box.innerHTML = `
                     <div style="font-weight:bold; color:#a5d6a7; margin-bottom:12px; font-size:16px;">📍 ${category} (${uniqueItems.length} trovati nei dintorni)</div>
                     ${uniqueItems.map((p) => `
-                        <div style="background:#262d2a; border:1px solid #3f534b; border-radius:9px; padding:12px; margin-bottom:10px;">
+                        <div style="background:#262d2a; border:1px solid #3f534b; border-radius:99px; padding:12px; margin-bottom:10px;">
                             <div style="font-size:16px; font-weight:bold; color:#ffffff; margin-bottom:5px;">• ${p.name}</div>
                             <div style="font-size:14px; color:#cfd8dc; margin-bottom:4px;">📍 <strong>Indirizzo:</strong> ${p.address}</div>
                             <div style="font-size:14px; color:#80cbc4;">📞 <strong>Telefono:</strong> ${p.phone}</div>
