@@ -8,7 +8,6 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%232e7d32'/><polygon points='50,20 80,75 20,75' fill='%23ffffff'/></svg>">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
-        /* Animazione Tasto SOS */
         @keyframes sosPulse2 {
             0% { background-color: #d32f2f; box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.85); }
             50% { background-color: #ff1744; box-shadow: 0 0 14px 4px rgba(255, 23, 68, 0.7); }
@@ -16,22 +15,25 @@
         }
         .sos-blink-btn { animation: sosPulse2 1.2s infinite; }
 
-        /* Animazioni Pallino GPS Pulsante/Intermittente */
         @keyframes gpsBlinkGreen {
-            0% { background-color: #4caf50; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.9); opacity: 1; }
-            50% { background-color: #81c784; box-shadow: 0 0 12px 5px rgba(76, 175, 80, 0.6); opacity: 0.3; }
-            100% { background-color: #4caf50; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.9); opacity: 1; }
+            0% { background-color: #4caf50; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.95); opacity: 1; }
+            50% { background-color: #a5d6a7; box-shadow: 0 0 14px 6px rgba(76, 175, 80, 0.75); opacity: 0.25; }
+            100% { background-color: #4caf50; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.95); opacity: 1; }
         }
         @keyframes gpsBlinkAmber {
-            0% { background-color: #ffc107; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.9); opacity: 1; }
-            50% { background-color: #ffe082; box-shadow: 0 0 12px 5px rgba(255, 193, 7, 0.6); opacity: 0.3; }
-            100% { background-color: #ffc107; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.9); opacity: 1; }
+            0% { background-color: #ffc107; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.95); opacity: 1; }
+            50% { background-color: #ffe082; box-shadow: 0 0 14px 6px rgba(255, 193, 7, 0.7); opacity: 0.25; }
+            100% { background-color: #ffc107; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.95); opacity: 1; }
         }
 
+        #gps-status-dot.gps-active,
         .gps-active {
+            background-color: #4caf50 !important;
             animation: gpsBlinkGreen 1s infinite ease-in-out !important;
         }
+        #gps-status-dot.gps-waiting,
         .gps-waiting {
+            background-color: #ffc107 !important;
             animation: gpsBlinkAmber 1.2s infinite ease-in-out !important;
         }
 
@@ -59,13 +61,16 @@
 
     <div id="welcome-box"></div>
 
-    <div id="license-panel" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #333; display:none;">
-        <p id="license-status-text" style="margin:0 0 10px 0; font-size:15px;"></p>
+    <div id="license-panel" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:2px solid #2e7d32; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color:#a5d6a7; font-size:15px;">🔑 Attivazione Codice Licenza</strong>
+            <button onclick="document.getElementById('license-panel').style.display='none'" style="padding:5px 10px; border:none; border-radius:6px; background:#424242; color:#fff; cursor:pointer; font-size:13px;">Chiudi</button>
+        </div>
+        <p id="license-status-text" style="margin:0 0 10px 0; font-size:14px; color:#eceff1;">Inserisci il codice di licenza per attivare l'applicazione.</p>
         <input id="license-code-input" type="text" placeholder="Inserisci codice di sblocco..." style="width:100%; padding:11px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:10px; box-sizing:border-box; font-size:15px;">
         <button onclick="handleLicenseSubmit()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Attiva Licenza</button>
     </div>
 
-    <!-- Barra Superiore GPS e SOS -->
     <div id="sv2-top-bar" style="max-width:520px; margin:6px auto 10px auto; display:flex; align-items:center; justify-content:space-between; gap:10px; background:#1c1c1c; padding:10px 12px; border-radius:12px; border:1px solid #333;">
         <div onclick="startGpsTrackingNow2()" style="display:flex; align-items:center; gap:9px; min-width:0; flex:1; cursor:pointer;" title="Tocca per riprovare il GPS">
             <span id="gps-status-dot" class="gps-waiting" style="display:inline-block; width:16px; height:16px; border-radius:50%; flex-shrink:0;"></span>
@@ -75,7 +80,6 @@
         <button class="sos-blink-btn" onclick="toggleSosPanel2()" style="padding:8px 14px; border:none; border-radius:8px; color:#ffffff; font-weight:bold; font-size:14px; cursor:pointer; flex-shrink:0;">SOS</button>
     </div>
 
-    <!-- Pannello Assistente Info -->
     <div id="sv2-assistant-panel" style="max-width:520px; margin:8px auto 10px auto; background:#182433; padding:14px; border-radius:12px; border:1px solid #1e88e5; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
             <h3 style="margin:0; color:#90caf9; font-size:17px;">ℹ️ Assistente Info</h3>
@@ -88,21 +92,20 @@
         <div id="assistant-status-summary" style="background:#101924; padding:10px 12px; border-radius:8px; font-size:14px; color:#e3f2fd; margin-bottom:10px; line-height:1.45;"></div>
 
         <div style="display:flex; gap:8px; margin-bottom:10px;">
-            <button id="btn-mic-ask2" onclick="startAssistantVoiceQuery2()" style="flex:1; padding:11px; border:none; border-radius:8px; background:#1565c0; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">🎤 Interroga con Microfono</button>
+            <button id="btn-mic-ask2" onclick="startAssistantVoiceQuery2()" style="flex:1; padding:11px; border:none; border-radius:8px; background:#1565c0; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">🎤 Detta Domanda</button>
             <button onclick="stopAssistantSpeech2()" style="padding:11px 12px; border:none; border-radius:8px; background:#37474f; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">🔇 Muto</button>
         </div>
 
         <div style="display:flex; gap:8px; margin-bottom:10px;">
-            <input id="assistant-text-input" type="text" placeholder="Oppure scrivi una domanda..." onkeydown="if(event.key==='Enter') askAssistantText2()" style="flex:1; padding:10px; border-radius:8px; border:1px solid #455a64; background:#223142; color:#fff; font-size:14px; box-sizing:border-box;">
+            <input id="assistant-text-input" type="text" placeholder="Scrivi o detta qui, poi premi Chiedi..." onkeydown="if(event.key==='Enter') askAssistantText2()" style="flex:1; padding:10px; border-radius:8px; border:1px solid #455a64; background:#223142; color:#fff; font-size:14px; box-sizing:border-box;">
             <button onclick="askAssistantText2()" style="padding:10px 14px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">Chiedi</button>
         </div>
 
         <div id="assistant-reply-box" style="background:#121b26; border:1px solid #2c435e; border-radius:8px; padding:10px 12px; font-size:14px; color:#bbdefb; min-height:42px;">
-            Premi <strong>Interroga con Microfono</strong> oppure scrivi una domanda.
+            Premi <strong>Detta Domanda</strong> oppure scrivi nella casella e tocca <strong>Chiedi</strong>.
         </div>
     </div>
 
-    <!-- Pannello SOS -->
     <div id="sos-setup-panel" style="max-width:520px; margin:8px auto 10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #d32f2f; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h3 style="margin:0; color:#ff8a80; font-size:16px;">Contatti Emergenza S.O.S.</h3>
@@ -115,12 +118,10 @@
         <p id="sos-feedback" style="margin:8px 0 0 0; font-size:13px; color:#ffcc80;"></p>
     </div>
 
-    <!-- Mappa -->
     <div id="sv2-map-wrap" style="max-width:520px; margin:0 auto 10px auto;">
         <div id="map2" style="width:100%; height:62vh; min-height:340px; border-radius:12px; border:2px solid #2e7d32; overflow:hidden; background:#1b2620;"></div>
     </div>
 
-    <!-- Pulsanti Principali -->
     <div id="sv2-main-buttons" style="max-width:520px; margin:0 auto 12px auto; display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
         <button onclick="handleStartTrack2()" style="padding:12px 6px; border:none; border-radius:10px; background:#2e7d32; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">▶️ Avvia</button>
         <button id="btn-pause-track2" onclick="handlePauseTrack2()" style="padding:12px 6px; border:none; border-radius:10px; background:#455a64; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">⏸️ Pausa</button>
@@ -130,7 +131,6 @@
         <button onclick="toggleMenuDrawer2()" style="padding:12px 6px; border:none; border-radius:10px; background:#37474f; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">☰ Menu</button>
     </div>
 
-    <!-- Modal Salvataggio -->
     <div id="sentiero2-save-modal" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #c62828; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h3 style="margin:0; color:#ef9a9a; font-size:16px;">Salvataggio Percorso</h3>
@@ -142,7 +142,6 @@
         <button onclick="handleSaveTrack2()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Conferma e Salva</button>
     </div>
 
-    <!-- Menu Drawer -->
     <div id="sentiero2-menu-drawer" class="sv2-fullscreen-drawer" style="background:#151515; display:none;">
         <div style="max-width:680px; margin:0 auto; padding-bottom:40px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; position:sticky; top:0; background:#151515; padding:10px 0; border-bottom:1px solid #333; z-index:2;">
@@ -152,7 +151,7 @@
 
             <div style="display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:20px;">
                 <button class="sv2-menu-big-btn" onclick="apriCartellaPercorsi2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">📁 Cartella percorsi</button>
-                <button class="sv2-menu-big-btn" onclick="menuRegistraVocale2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">🎙️ Registra un vocale</button>
+                <button class="sv2-menu-big-btn" onclick="handleAudioWp2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">🎙️ Registra un vocale</button>
                 <button class="sv2-menu-big-btn" onclick="menuRegistraVideo2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">🎥 Registra un video</button>
                 <button class="sv2-menu-big-btn" onclick="menuScattaFotoWaypoint2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">📸 Scatta foto e waypoint</button>
                 <button class="sv2-menu-big-btn" onclick="menuRitornoARitroso2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">↩️ Ritorno a ritroso</button>
@@ -175,7 +174,7 @@
             <div style="border-top:1px solid #333; padding-top:16px;">
                 <div style="font-size:18px; color:#80cbc4; font-weight:bold; margin-bottom:12px;">Licenza e Gemini (protetti da password)</div>
                 <div style="display:grid; grid-template-columns:1fr; gap:10px;">
-                    <button class="sv2-menu-big-btn" onclick="apriGestioneLicenzaDaMenu2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🔑 Inserisci codice di licenza</button>
+                    <button class="sv2-menu-big-btn" onclick="unlockAndShowLicenseBox2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🔑 Inserisci codice di licenza</button>
                     <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('key')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">⚙️ Imposta chiave API Gemini</button>
                     <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('model')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🤖 Imposta modello Gemini</button>
                     <button class="sv2-menu-big-btn" onclick="mostraModelliGeminiDisponibili2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">📋 Mostra modelli disponibili</button>
@@ -184,7 +183,6 @@
         </div>
     </div>
 
-    <!-- Modal Punti di Interesse -->
     <div id="sentiero2-poi-modal" class="sv2-fullscreen-drawer" style="background:#141816; display:none;">
         <div style="max-width:680px; margin:0 auto; padding-bottom:40px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; position:sticky; top:0; background:#141816; padding:10px 0; border-bottom:1px solid #2e7d32; z-index:3;">
@@ -215,7 +213,6 @@
         </div>
     </div>
 
-    <!-- Modal Archivio -->
     <div id="sentiero2-archivio-modal" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #90caf9; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h3 style="margin:0; color:#90caf9; font-size:16px;">Archivio Percorsi Salvati</h3>
@@ -240,6 +237,7 @@
         let fallbackMap2 = null;
         let fallbackUserMarker2 = null;
         let gpsWatchId2 = null;
+        let lastCenteredCoords2 = null;
         const VOICE_PREF_KEY2 = 'sv2_assistant_voice_enabled';
 
         function isAssistantVoiceEnabled2() {
@@ -295,7 +293,8 @@
             const dot = document.getElementById('gps-status-dot');
             const txt = document.getElementById('gps-status-text');
             if (dot) {
-                dot.className = active ? 'gps-active' : 'gps-waiting';
+                dot.classList.remove('gps-active', 'gps-waiting');
+                dot.classList.add(active ? 'gps-active' : 'gps-waiting');
             }
             if (txt && labelText) {
                 txt.innerText = labelText;
@@ -322,7 +321,7 @@
             if (!fallbackMap2) {
                 const startLat = currentGpsCoords2 ? currentGpsCoords2.lat : 43.5485;
                 const startLon = currentGpsCoords2 ? currentGpsCoords2.lon : 10.4225;
-                fallbackMap2 = L.map('map2').setView([startLat, startLon], 14);
+                fallbackMap2 = L.map('map2', { preferCanvas: true }).setView([startLat, startLon], 15);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '&copy; OpenStreetMap'
@@ -335,9 +334,20 @@
             return fallbackMap2;
         }
 
+        function distanceMeters2(a, b) {
+            if (!a || !b) return Infinity;
+            const toRad = (v) => (v * Math.PI) / 180;
+            const R = 6371000;
+            const dLat = toRad(b.lat - a.lat);
+            const dLon = toRad(b.lon - a.lon);
+            const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
+            return 2 * R * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+        }
+
         function updateMapWithPosition2(lat, lon) {
-            currentGpsCoords2 = { lat: Number(lat), lon: Number(lon) };
-            setGpsUiState2(true, `GPS attivo (${lat.toFixed(4)}, ${lon.toFixed(4)})`);
+            const nextPos = { lat: Number(lat), lon: Number(lon) };
+            currentGpsCoords2 = nextPos;
+            setGpsUiState2(true, `GPS attivo (${nextPos.lat.toFixed(4)}, ${nextPos.lon.toFixed(4)})`);
 
             const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.setView === 'function')
                 ? sentieroMap
@@ -345,23 +355,28 @@
 
             if (activeMap) {
                 try {
-                    activeMap.setView([lat, lon], activeMap.getZoom ? Math.max(activeMap.getZoom(), 14) : 14);
+                    const moved = distanceMeters2(lastCenteredCoords2, nextPos);
+                    if (!lastCenteredCoords2 || moved >= 3) {
+                        const zoomLvl = activeMap.getZoom ? Math.max(activeMap.getZoom(), 15) : 15;
+                        activeMap.setView([nextPos.lat, nextPos.lon], zoomLvl, { animate: false });
+                        lastCenteredCoords2 = nextPos;
+                    }
                     if (!fallbackUserMarker2) {
-                        fallbackUserMarker2 = L.circleMarker([lat, lon], {
+                        fallbackUserMarker2 = L.circleMarker([nextPos.lat, nextPos.lon], {
                             radius: 8,
                             color: '#ffffff',
                             weight: 2,
-                            fillColor: '#2e7d32',
+                            fillColor: '#4caf50',
                             fillOpacity: 1
                         }).addTo(activeMap);
                     } else {
-                        fallbackUserMarker2.setLatLng([lat, lon]);
+                        fallbackUserMarker2.setLatLng([nextPos.lat, nextPos.lon]);
                     }
                 } catch (e) {}
             }
 
             if (typeof recordTrack2Point === 'function') {
-                try { recordTrack2Point(lat, lon); } catch (e) {}
+                try { recordTrack2Point(nextPos.lat, nextPos.lon); } catch (e) {}
             }
         }
 
@@ -389,63 +404,88 @@
             }
 
             navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude);
-                },
-                (err) => {
-                    handleGpsError2(err);
-                },
-                { enableHighAccuracy: false, maximumAge: 60000, timeout: 6000 }
+                (pos) => updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude),
+                (err) => handleGpsError2(err),
+                { enableHighAccuracy: false, maximumAge: 30000, timeout: 6000 }
             );
 
             if (gpsWatchId2 !== null) {
                 navigator.geolocation.clearWatch(gpsWatchId2);
             }
             gpsWatchId2 = navigator.geolocation.watchPosition(
-                (pos) => {
-                    updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude);
-                },
-                (err) => {
-                    handleGpsError2(err);
-                },
-                { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+                (pos) => updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude),
+                (err) => handleGpsError2(err),
+                { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
             );
         }
 
-        function handleAudioWp2() {
-            if (typeof track2Active !== 'undefined' && !track2Active) { 
-                alert("Avvia prima la registrazione del percorso."); 
-                return; 
+        function commitAudioWaypointText2(rawText) {
+            const clean = (rawText || '').trim();
+            if (!clean) {
+                alert("Nessun testo vocale o nota rilevato: il waypoint non è stato salvato.");
+                return false;
             }
+            if (typeof addAudioWaypoint2 === 'function') {
+                const idx = addAudioWaypoint2(clean);
+                const noteInp = document.getElementById('wp2-note-input');
+                if (noteInp) noteInp.value = '';
+                alert("Waypoint vocale #" + idx + " salvato:\n\"" + clean + "\"");
+                return true;
+            }
+            alert("Funzione waypoint vocale non disponibile.");
+            return false;
+        }
+
+        function handleAudioWp2() {
+            if (typeof track2Active !== 'undefined' && !track2Active) {
+                alert("Avvia prima la registrazione del percorso.");
+                return;
+            }
+
+            const existingNote = (document.getElementById('wp2-note-input')?.value || '').trim();
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (SpeechRec) {
-                const rec = new SpeechRec();
-                rec.lang = 'it-IT';
-                rec.interimResults = false;
-                rec.start();
-                alert("Microfono attivo: parla adesso per registrare la nota vocale del waypoint.");
-                rec.onresult = function(event) {
-                    const testoParlato = event.results?.[0]?.[0]?.transcript || "";
-                    if (testoParlato) {
-                        const idx = (typeof addAudioWaypoint2 === 'function') ? addAudioWaypoint2(testoParlato) : 1;
-                        alert("Nota vocale registrata #" + idx + ":\n\"" + testoParlato + "\"");
-                    } else {
-                        alert("Nessun testo rilevato dalla voce.");
+
+            if (!SpeechRec) {
+                const typed = prompt("Dettatura non supportata dal browser. Scrivi la nota del waypoint:", existingNote);
+                if (typed !== null) commitAudioWaypointText2(typed);
+                return;
+            }
+
+            stopAssistantSpeech2();
+            const rec = new SpeechRec();
+            rec.lang = 'it-IT';
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+
+            let gotResult = false;
+            rec.onresult = function(event) {
+                gotResult = true;
+                const spoken = event.results?.[0]?.[0]?.transcript || '';
+                const noteInp = document.getElementById('wp2-note-input');
+                if (noteInp && spoken) noteInp.value = spoken;
+                commitAudioWaypointText2(spoken);
+            };
+
+            rec.onerror = function() {
+                if (gotResult) return;
+                const manual = prompt("Microfono non disponibile o interrotto. Scrivi la nota del waypoint:", existingNote);
+                if (manual !== null) commitAudioWaypointText2(manual);
+            };
+
+            rec.onend = function() {
+                if (!gotResult) {
+                    const currentVal = (document.getElementById('wp2-note-input')?.value || '').trim();
+                    if (currentVal) {
+                        commitAudioWaypointText2(currentVal);
                     }
-                };
-                rec.onerror = function() {
-                    const fallbackText = prompt("Impossibile accedere al microfono. Scrivi a mano la nota del waypoint:");
-                    if (fallbackText) {
-                        const idx = (typeof addAudioWaypoint2 === 'function') ? addAudioWaypoint2(fallbackText) : 1;
-                        alert("Nota salvata #" + idx + ".");
-                    }
-                };
-            } else {
-                const fallbackText = prompt("Riconoscimento vocale non supportato da questo browser. Scrivi la nota:");
-                if (fallbackText) {
-                    const idx = (typeof addAudioWaypoint2 === 'function') ? addAudioWaypoint2(fallbackText) : 1;
-                    alert("Nota salvata #" + idx + ".");
                 }
+            };
+
+            try {
+                rec.start();
+            } catch (e) {
+                const manual = prompt("Impossibile avviare il microfono. Scrivi la nota del waypoint:", existingNote);
+                if (manual !== null) commitAudioWaypointText2(manual);
             }
         }
 
@@ -479,27 +519,48 @@
             stopAssistantSpeech2();
         }
 
+        function sanitizeGeminiModel2(rawModel) {
+            let m = (rawModel || '').trim().replace(/^models\//i, '');
+            if (!m || m.includes(' ') || m.includes('1.5')) {
+                return 'gemini-2.5-flash';
+            }
+            return m;
+        }
+
         async function callGeminiApi2(promptText) {
             const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash' };
-            if (!cfg.apiKey) return { text: null, reason: 'no_key' };
+            const apiKey = (cfg.apiKey || '').trim();
+            if (!apiKey) return { text: null, reason: 'no_key' };
 
-            const modelName = cfg.model || 'gemini-2.5-flash';
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
+            const modelName = sanitizeGeminiModel2(cfg.model);
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 15000);
 
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    signal: controller.signal,
                     body: JSON.stringify({
                         contents: [{
                             parts: [{
-                                text: `Sei l'assistente escursionistico di SentieroVivo 2.0. Rispondi in italiano in modo breve, preciso e naturale (2-3 frasi) alla seguente richiesta: ${promptText}`
+                                text: `Sei l'assistente escursionistico di SentieroVivo 2.0. Rispondi in italiano in modo breve, chiaro e utile (massimo 3 frasi): ${promptText}`
                             }]
                         }]
                     })
                 });
+                clearTimeout(timer);
 
-                if (!response.ok) return { text: null, reason: 'http_error', status: response.status };
+                if (!response.ok) {
+                    let detail = '';
+                    try {
+                        const errJson = await response.json();
+                        detail = errJson?.error?.message || '';
+                    } catch (e) {}
+                    return { text: null, reason: 'http_error', status: response.status, detail };
+                }
 
                 const data = await response.json();
                 const textResult = data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -508,7 +569,10 @@
                 }
                 return { text: null, reason: 'empty' };
             } catch (err) {
-                console.warn("Chiamata Gemini fallita:", err);
+                clearTimeout(timer);
+                if (err && err.name === 'AbortError') {
+                    return { text: null, reason: 'timeout' };
+                }
                 return { text: null, reason: 'network_error' };
             }
         }
@@ -554,10 +618,13 @@
                     answer = resGemini.text;
                 } else if (resGemini && resGemini.reason === 'no_key') {
                     answer = `Per domande generali o previsioni per altre città serve inserire la chiave API Gemini nel Menu.`;
+                } else if (resGemini && resGemini.reason === 'timeout') {
+                    answer = `Gemini ha impiegato troppo tempo a rispondere. Riprova tra qualche istante.`;
                 } else if (resGemini && resGemini.reason === 'http_error') {
-                    answer = `Errore nella risposta di Gemini (codice ${resGemini.status}). Controlla la chiave API e il modello nel Menu.`;
+                    const extra = resGemini.detail ? ` (${resGemini.detail})` : '';
+                    answer = `Errore Gemini ${resGemini.status}${extra}.`;
                 } else {
-                    answer = `Non sono riuscito a collegarmi a Gemini per questa domanda. Verifica la chiave API e la connessione internet.`;
+                    answer = `Non sono riuscito a collegarmi a Gemini. Verifica la connessione internet e la chiave API.`;
                 }
             }
 
@@ -578,7 +645,7 @@
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRec) {
                 if (replyBox) {
-                    replyBox.innerText = 'Riconoscimento vocale non supportato da questo browser: puoi scrivere la domanda qui sotto.';
+                    replyBox.innerText = 'Riconoscimento vocale non supportato da questo browser: scrivi la domanda e premi Chiedi.';
                 }
                 return;
             }
@@ -589,23 +656,54 @@
             rec.maxAlternatives = 1;
 
             if (replyBox) {
-                replyBox.innerText = '🎤 Sto ascoltando... parla ora.';
+                replyBox.innerText = '🎤 Sto ascoltando... parla e poi premi Chiedi se vuoi inviare.';
             }
 
             rec.onresult = (event) => {
-                const spoken = event.results?.[0]?.[0]?.transcript || '';
+                const spoken = (event.results?.[0]?.[0]?.transcript || '').trim();
                 const inp = document.getElementById('assistant-text-input');
                 if (inp) inp.value = spoken;
-                processAssistantQuestion2(spoken);
+                if (replyBox) {
+                    replyBox.innerText = spoken
+                        ? `Testo trascritto: "${spoken}". Tocca Chiedi per inviare.`
+                        : 'Nessun testo rilevato.';
+                }
             };
 
             rec.onerror = () => {
                 if (replyBox) {
-                    replyBox.innerText = 'Non ho rilevato la voce o il microfono non è accessibile. Puoi scrivere la domanda nella casella.';
+                    replyBox.innerText = 'Microfono non disponibile o interrotto. Scrivi la domanda nella casella e premi Chiedi.';
                 }
             };
 
             rec.start();
+        }
+
+        function showLicenseInputBox2(customMsg) {
+            const menuEl = document.getElementById('sentiero2-menu-drawer');
+            if (menuEl) menuEl.style.display = 'none';
+            const panel = document.getElementById('license-panel');
+            const statusText = document.getElementById('license-status-text');
+            const inputEl = document.getElementById('license-code-input');
+            if (statusText && customMsg) {
+                statusText.innerText = customMsg;
+            }
+            if (panel) {
+                panel.style.display = 'block';
+                panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (inputEl) {
+                setTimeout(() => inputEl.focus(), 120);
+            }
+        }
+
+        function unlockAndShowLicenseBox2() {
+            if (typeof apriGestioneLicenzaDaMenu2 === 'function') {
+                try {
+                    apriGestioneLicenzaDaMenu2();
+                } catch (e) {}
+            }
+            showLicenseInputBox2("Inserisci il codice di licenza e tocca Attiva Licenza.");
         }
 
         function refreshLicenseUi() {
@@ -618,11 +716,11 @@
 
             if (state.status === 'expired') {
                 panel.style.display = 'block';
-                statusText.innerText = "I 30 giorni di prova sono terminati. Contatta Massimo per ricevere il codice di attivazione.";
+                statusText.innerText = "I 30 giorni di prova sono terminati. Inserisci il codice di attivazione.";
             } else if (state.status === 'tampered') {
                 panel.style.display = 'block';
                 statusText.innerText = "Rilevata un'anomalia nella data del dispositivo. Inserisci il codice di attivazione.";
-            } else {
+            } else if (panel.style.display !== 'block') {
                 panel.style.display = 'none';
             }
         }
@@ -763,7 +861,7 @@
                     const tags = el.tags || {};
                     let name = tags.name || tags['ref'] || tags['operator'];
                     if (!name) {
-                        if (category === 'STRADE IN MONTAGNA') name = 'Strada/Strada sterrata di montagna';
+                        if (category === 'STRADE IN MONTAGNA') name = 'Strada sterrata di montagna';
                         else if (category === 'SENTIERI NELLE VICINANZE') name = 'Sentiero escursionistico';
                         else name = 'Punto senza nome specifico';
                     }
@@ -851,7 +949,11 @@
 
         function openSaveTrackModal2() {
             const el = document.getElementById('sentiero2-save-modal');
-            if (el) el.style.display = 'block';
+            if (el) {
+                refreshFolderSelect2();
+                el.style.display = 'block';
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
 
         function closeSaveTrackModal2() {
@@ -918,16 +1020,23 @@
         }
 
         function handleSaveTrack2() {
-            if (!track2Active && (!track2Coordinates || track2Coordinates.length === 0)) {
-                alert("Nessun percorso attivo da salvare.");
+            const hasActive = (typeof track2Active !== 'undefined' && track2Active);
+            const hasPts = (typeof track2Coordinates !== 'undefined' && Array.isArray(track2Coordinates) && track2Coordinates.length > 0);
+            if (!hasActive && !hasPts) {
+                alert("Nessun percorso attivo o registrato da salvare.");
                 return;
             }
-            const nameVal = document.getElementById('track2-name-input').value || track2Name;
+            const nameVal = document.getElementById('track2-name-input').value || (typeof track2Name !== 'undefined' ? track2Name : 'Percorso');
             const newFolder = document.getElementById('save2-new-folder-input').value.trim();
-            const chosenFolder = newFolder || document.getElementById('save2-folder-select').value;
+            const chosenFolder = newFolder || document.getElementById('save2-folder-select').value || 'Trekking';
+
+            if (typeof saveCurrentTrack2 !== 'function') {
+                alert("Funzione di salvataggio non disponibile.");
+                return;
+            }
 
             const res = saveCurrentTrack2(nameVal, chosenFolder);
-            if (res.ok) {
+            if (res && res.ok) {
                 document.getElementById('save2-new-folder-input').value = '';
                 document.getElementById('track2-status-label').innerText = "Salvato";
                 document.getElementById('btn-pause-track2').innerText = "⏸️ Pausa";
@@ -935,17 +1044,24 @@
                 refreshFolderSelect2();
                 renderSavedTracks2Ui();
                 alert(`Percorso "${res.track.name}" salvato in "${res.track.folder}".`);
+            } else {
+                alert((res && res.message) || "Salvataggio non riuscito: controlla che ci siano punti registrati.");
             }
         }
 
         function handleManualWp2() {
-            if (!track2Active) { alert("Avvia prima la registrazione del percorso."); return; }
-            const idx = addManualWaypoint2();
-            alert("Bandierina manuale #" + idx + " inserita.");
+            if (typeof track2Active !== 'undefined' && !track2Active) {
+                alert("Avvia prima la registrazione del percorso.");
+                return;
+            }
+            if (typeof addManualWaypoint2 === 'function') {
+                const idx = addManualWaypoint2();
+                alert("Bandierina manuale #" + idx + " inserita.");
+            }
         }
 
         function handlePhotoWp2(event) {
-            if (!track2Active) {
+            if (typeof track2Active !== 'undefined' && !track2Active) {
                 alert("Avvia prima la registrazione del percorso.");
                 event.target.value = "";
                 return;
@@ -955,16 +1071,18 @@
             const caption = document.getElementById('wp2-note-input').value.trim();
             const reader = new FileReader();
             reader.onload = function(e) {
-                const idx = addPhotoWaypoint2(e.target.result, caption);
-                document.getElementById('wp2-note-input').value = "";
-                event.target.value = "";
-                alert("Foto #" + idx + " salvata sul punto.");
+                if (typeof addPhotoWaypoint2 === 'function') {
+                    const idx = addPhotoWaypoint2(e.target.result, caption);
+                    document.getElementById('wp2-note-input').value = "";
+                    event.target.value = "";
+                    alert("Foto #" + idx + " salvata sul punto.");
+                }
             };
             reader.readAsDataURL(file);
         }
 
         function handleVideoWp2(event) {
-            if (!track2Active) {
+            if (typeof track2Active !== 'undefined' && !track2Active) {
                 alert("Avvia prima la registrazione del percorso.");
                 event.target.value = "";
                 return;
@@ -974,10 +1092,12 @@
             const caption = document.getElementById('wp2-note-input').value.trim();
             const reader = new FileReader();
             reader.onload = function(e) {
-                const idx = addVideoWaypoint2(e.target.result, caption);
-                document.getElementById('wp2-note-input').value = "";
-                event.target.value = "";
-                alert("Video #" + idx + " salvato sul punto.");
+                if (typeof addVideoWaypoint2 === 'function') {
+                    const idx = addVideoWaypoint2(e.target.result, caption);
+                    document.getElementById('wp2-note-input').value = "";
+                    event.target.value = "";
+                    alert("Video #" + idx + " salvato sul punto.");
+                }
             };
             reader.readAsDataURL(file);
         }
