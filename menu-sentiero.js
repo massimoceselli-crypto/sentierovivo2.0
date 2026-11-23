@@ -1,103 +1,110 @@
-const LICENZA2_STORAGE_KEY = 'sentierovivo2_license_state';
-const LICENZA2_TRIAL_DAYS = 30;
-const LICENZA2_VALID_KEYS = [
-    'MASSIMO2026',
-    'SENTIEROVIP2026',
-    'MASSIMOMASTER2026',
-    'SENTIEROVIP',
-    'SENTIERO2026'
-];
+const GEMINI2_CONFIG_KEY = 'sv2_gemini_config';
+const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
+const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
+const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
+const MACRO_MODEL_PRESET = 'Gemini-3.5-flash-lite';
 
-function getTodayDateString2() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-}
-
-function initTrialAndLicense() {
-    const todayStr = getTodayDateString2();
-    const raw = localStorage.getItem(LICENZA2_STORAGE_KEY);
-
+function getGeminiConfig2() {
+    const raw = localStorage.getItem(GEMINI2_CONFIG_KEY);
     if (!raw) {
-        const initial = {
-            startDate: todayStr,
-            lastSeenDate: todayStr,
-            activated: false,
-            activeKey: ''
+        return { apiKey: '', model: MACRO_MODEL_PRESET };
+    }
+    try {
+        const parsed = JSON.parse(raw);
+        return {
+            apiKey: parsed.apiKey || '',
+            model: parsed.model || MACRO_MODEL_PRESET
         };
-        localStorage.setItem(LICENZA2_STORAGE_KEY, JSON.stringify(initial));
-        return { status: 'trial', daysLeft: LICENZA2_TRIAL_DAYS };
+    } catch (e) {
+        return { apiKey: '', model: MACRO_MODEL_PRESET };
     }
-
-    const data = JSON.parse(raw);
-
-    if (data.activated) {
-        return { status: 'activated', daysLeft: 999, activeKey: data.activeKey || '' };
-    }
-
-    if (data.lastSeenDate && todayStr < data.lastSeenDate) {
-        return { status: 'tampered', daysLeft: 0 };
-    }
-
-    data.lastSeenDate = todayStr;
-    localStorage.setItem(LICENZA2_STORAGE_KEY, JSON.stringify(data));
-
-    const start = new Date(data.startDate + 'T00:00:00');
-    const now = new Date(todayStr + 'T00:00:00');
-    const elapsedDays = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-    const daysLeft = LICENZA2_TRIAL_DAYS - elapsedDays;
-
-    if (daysLeft <= 0) {
-        return { status: 'expired', daysLeft: 0 };
-    }
-
-    return { status: 'trial', daysLeft };
 }
 
-function activateLicenseKey(codeInput) {
-    const cleaned = (codeInput || '').trim().toUpperCase();
-    if (!LICENZA2_VALID_KEYS.includes(cleaned)) {
-        return false;
-    }
-    const todayStr = getTodayDateString2();
-    const current = {
-        startDate: todayStr,
-        lastSeenDate: todayStr,
-        activated: true,
-        activeKey: cleaned
+function saveGeminiConfig2(apiKey, model) {
+    const current = getGeminiConfig2();
+    const updated = {
+        apiKey: apiKey !== undefined ? apiKey.trim() : current.apiKey,
+        model: model !== undefined ? model.trim() : current.model
     };
-    localStorage.setItem(LICENZA2_STORAGE_KEY, JSON.stringify(current));
-    return true;
+    localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(updated));
 }
 
-function resetLicenseState2() {
-    localStorage.removeItem(LICENZA2_STORAGE_KEY);
-}
+function askAdminPassword2(promptMessage) {
+    const entered = prompt(promptMessage || "Inserisci la password principale (MASSIMO2026):");
+    if (entered === null) return false;
+    const cleanEntered = entered.trim().toUpperCase();
+    const cleanExpected = SENTIERO2_ADMIN_PASS.trim().toUpperCase();
 
-function handleLicenseSubmit() {
-    const inputEl = document.getElementById('license-code-input');
-    const statusEl = document.getElementById('license-status-text');
-    const panelEl = document.getElementById('license-panel');
-    const code = inputEl ? inputEl.value : '';
-
-    if (activateLicenseKey(code)) {
-        const clean = String(code).trim().toUpperCase();
-        if (statusEl) {
-            statusEl.innerText = "Licenza attivata (" + clean + ").";
-        }
-        alert("Licenza attivata con successo (" + clean + ")!");
-        if (panelEl) {
-            panelEl.style.display = 'none';
-        }
-        if (typeof refreshLicenseUi === 'function') {
-            refreshLicenseUi();
-        }
-    } else {
-        if (statusEl) {
-            statusEl.innerText = "Codice non valido. Usa ad esempio MASSIMO2026 o SENTIEROVIP2026.";
-        }
-        alert("Codice di licenza non valido.");
+    if (cleanEntered === cleanExpected) {
+        return true;
     }
+    alert("Password errata. Accesso negato.");
+    return false;
+}
+
+function eseguiMacroConfigurazioneCompleta2() {
+    let entered = prompt("Inserisci la password principale (MASSIMO2026) per attivare la MACRO:");
+    if (entered === null) return;
+    
+    if (entered.trim().toUpperCase() !== SENTIERO2_ADMIN_PASS) {
+        alert("Password errata! Accesso negato.");
+        return;
+    }
+
+    if (typeof activateLicenseKey === 'function') {
+        activateLicenseKey(MACRO_LICENSE_KEY_PRESET);
+    }
+
+    saveGeminiConfig2(MACRO_API_KEY_PRESET, MACRO_MODEL_PRESET);
+
+    if (typeof refreshLicenseUi === 'function') {
+        refreshLicenseUi();
+    }
+
+    const drawer = document.getElementById('sentiero2-menu-drawer');
+    if (drawer) drawer.style.display = 'none';
+
+    alert(
+        "⚡ MACRO eseguita con successo!\n\n" +
+        "• Licenza attivata: " + MACRO_LICENSE_KEY_PRESET + "\n" +
+        "• API Key Gemini: configurata\n" +
+        "• Modello Gemini: " + MACRO_MODEL_PRESET + "\n\n" +
+        "L'applicazione è ora pronta all'uso."
+    );
+}
+
+function apriGestioneLicenzaDaMenu2() {
+    if (!askAdminPassword2("Inserisci la password principale (MASSIMO2026) per gestire la licenza:")) {
+        return;
+    }
+    if (typeof showLicenseInputBox2 === 'function') {
+        showLicenseInputBox2();
+    }
+}
+
+function apriPannelloGeminiProtetto2(modo) {
+    if (!askAdminPassword2("Inserisci la password principale (MASSIMO2026) per le impostazioni Gemini:")) {
+        return;
+    }
+    const current = getGeminiConfig2();
+    if (modo === 'key') {
+        const newKey = prompt("Inserisci la chiave API Gemini:", current.apiKey);
+        if (newKey !== null) {
+            saveGeminiConfig2(newKey, current.model);
+            alert("Chiave API Gemini salvata.");
+        }
+    } else if (modo === 'model') {
+        const newModel = prompt("Inserisci il modello Gemini:", current.model);
+        if (newModel !== null) {
+            saveGeminiConfig2(current.apiKey, newModel);
+            alert("Modello Gemini salvato: " + newModel);
+        }
+    }
+}
+
+function mostraModelliGeminiDisponibili2() {
+    if (!askAdminPassword2("Inserisci la password principale (MASSIMO2026) per vedere i modelli:")) {
+        return;
+    }
+    alert("Modello configurato:\n- Gemini-3.5-flash-lite");
 }
