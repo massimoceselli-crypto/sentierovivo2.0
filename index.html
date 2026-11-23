@@ -32,6 +32,15 @@
             100% { transform: scale(2.2); opacity: 0; }
         }
 
+        #map2, #map2 .leaflet-container, #map2 .leaflet-tile-pane, #map2 .leaflet-overlay-pane, #map2 .leaflet-marker-pane {
+            background: transparent;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+        #map2 .leaflet-tile {
+            outline: 1px solid transparent;
+        }
+
         .sv2-user-pulse-wrap {
             position: relative;
             width: 38px;
@@ -278,7 +287,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <script>
-        const CODE_DEFAULT_VERSION = '328';
+        const CODE_DEFAULT_VERSION = '329';
         const manualOverrideVer = localStorage.getItem('sv2_manual_version_override');
         window.APP_BUILD_VERSION = (manualOverrideVer && String(manualOverrideVer).trim())
             ? String(manualOverrideVer).trim()
@@ -332,6 +341,68 @@
         let lastHeadingDeg2 = 0;
         let courseUpEnabled2 = true;
         const VOICE_PREF_KEY2 = 'sv2_assistant_voice_enabled';
+
+        function attachWaypointCoordinateClickHandlers2() {
+            const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.eachLayer === 'function')
+                ? sentieroMap
+                : fallbackMap2;
+            if (!activeMap || typeof activeMap.eachLayer !== 'function') return;
+
+            let wpIndex = 0;
+            activeMap.eachLayer((layer) => {
+                if (layer === fallbackUserMarker2) return;
+                if (typeof layer.getLatLng === 'function' && !(layer instanceof L.Polyline) && !(layer instanceof L.Polygon)) {
+                    wpIndex += 1;
+                    const idx = wpIndex;
+                    if (!layer._sv2CoordsBound) {
+                        layer._sv2CoordsBound = true;
+                        layer.on('click', () => {
+                            const ll = layer.getLatLng();
+                            if (!ll) return;
+                            const latStr = Number(ll.lat).toFixed(6);
+                            const lonStr = Number(ll.lng).toFixed(6);
+                            const msg = `📍 Waypoint #${idx}\n\nLatitudine: ${latStr}\nLongitudine: ${lonStr}`;
+                            if (typeof layer.bindPopup === 'function') {
+                                layer.bindPopup(`<strong>Waypoint #${idx}</strong><br>Lat: ${latStr}<br>Lon: ${lonStr}`).openPopup();
+                            }
+                            alert(msg);
+                        });
+                    }
+                }
+            });
+        }
+
+        function refreshMapAfterPinch2() {
+            const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.invalidateSize === 'function')
+                ? sentieroMap
+                : fallbackMap2;
+            if (!activeMap) return;
+            try {
+                activeMap.invalidateSize({ animate: false });
+                if (typeof activeMap.eachLayer === 'function') {
+                    activeMap.eachLayer((layer) => {
+                        if (typeof layer.redraw === 'function') {
+                            layer.redraw();
+                        }
+                    });
+                }
+                attachWaypointCoordinateClickHandlers2();
+            } catch (e) {}
+        }
+
+        function bindMapPinchAndWaypointSupport2() {
+            const mapEl = document.getElementById('map2');
+            if (!mapEl || mapEl._sv2TouchBound) return;
+            mapEl._sv2TouchBound = true;
+
+            let pinchTimer = null;
+            mapEl.addEventListener('touchend', () => {
+                clearTimeout(pinchTimer);
+                pinchTimer = setTimeout(() => {
+                    refreshMapAfterPinch2();
+                }, 180);
+            }, { passive: true });
+        }
 
         function createPulsingUserIcon2() {
             return L.divIcon({
@@ -459,6 +530,8 @@
             const mapEl = document.getElementById('map2');
             if (!mapEl || typeof L === 'undefined') return null;
 
+            bindMapPinchAndWaypointSupport2();
+
             if (typeof initSentieroMap === 'function' && !fallbackMap2) {
                 try {
                     initSentieroMap('map2');
@@ -470,6 +543,7 @@
                     try {
                         sentieroMap.invalidateSize();
                         applyMapHeadingRotation2(lastHeadingDeg2);
+                        attachWaypointCoordinateClickHandlers2();
                     } catch (e) {}
                 }, 150);
                 return sentieroMap;
@@ -489,6 +563,7 @@
                 try {
                     fallbackMap2.invalidateSize();
                     applyMapHeadingRotation2(lastHeadingDeg2);
+                    attachWaypointCoordinateClickHandlers2();
                 } catch (e) {}
             }, 150);
             return fallbackMap2;
@@ -538,6 +613,7 @@
                         fallbackUserMarker2.setLatLng([nextPos.lat, nextPos.lon]);
                     }
                     applyMapHeadingRotation2(lastHeadingDeg2);
+                    attachWaypointCoordinateClickHandlers2();
                 } catch (e) {}
             }
 
@@ -1178,6 +1254,9 @@
             if (typeof openSavedTrack2OnMap === 'function' && openSavedTrack2OnMap(id)) {
                 document.getElementById('sentiero2-archivio-modal').style.display = 'none';
                 document.getElementById('track2-status-label').innerText = "Percorso caricato";
+                setTimeout(() => {
+                    refreshMapAfterPinch2();
+                }, 250);
             }
         }
 
@@ -1195,6 +1274,7 @@
             if (typeof addAutoWaypoint2 === 'function') addAutoWaypoint2();
             document.getElementById('track2-status-label').innerText = "In registrazione: " + res.name;
             document.getElementById('btn-pause-track2').innerText = "⏸️ Pausa";
+            setTimeout(() => attachWaypointCoordinateClickHandlers2(), 200);
         }
 
         function handlePauseTrack2() {
@@ -1243,6 +1323,7 @@
             if (typeof addManualWaypoint2 === 'function') {
                 const idx = addManualWaypoint2();
                 alert("Bandierina manuale #" + idx + " inserita.");
+                setTimeout(() => attachWaypointCoordinateClickHandlers2(), 200);
             }
         }
 
@@ -1262,6 +1343,7 @@
                     document.getElementById('wp2-note-input').value = "";
                     event.target.value = "";
                     alert("Foto #" + idx + " salvata sul punto.");
+                    setTimeout(() => attachWaypointCoordinateClickHandlers2(), 200);
                 }
             };
             reader.readAsDataURL(file);
@@ -1283,6 +1365,7 @@
                     document.getElementById('wp2-note-input').value = "";
                     event.target.value = "";
                     alert("Video #" + idx + " salvato sul punto.");
+                    setTimeout(() => attachWaypointCoordinateClickHandlers2(), 200);
                 }
             };
             reader.readAsDataURL(file);
@@ -1328,6 +1411,7 @@
                         document.getElementById('track2-status-label').innerText = "Bozza ripristinata";
                     }
                 }
+                attachWaypointCoordinateClickHandlers2();
             }, 350);
         });
     </script>
