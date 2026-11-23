@@ -3,7 +3,7 @@ const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
 const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
 const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
 const MACRO_MODEL_PRESET = 'gemini-2.5-flash-lite';
-const APP_BUILD_VERSION = '325';
+const APP_BUILD_VERSION = '326';
 
 const GEMINI_KNOWN_MODELS = [
     'gemini-2.5-flash-lite',
@@ -17,6 +17,7 @@ const GEMINI_KNOWN_MODELS = [
 
 let _sv2PasswordModalOverlay = null;
 let _sv2PasswordResolver = null;
+let _sv2ModelPickerOverlay = null;
 
 function ensureSv2PasswordModal() {
     if (_sv2PasswordModalOverlay) return _sv2PasswordModalOverlay;
@@ -143,6 +144,9 @@ function saveGeminiConfig2(apiKey, model) {
         model: model !== undefined ? model.trim() : current.model
     };
     localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(updated));
+    if (typeof refreshAssistantSummary2 === 'function') {
+        refreshAssistantSummary2();
+    }
 }
 
 function getActiveBuildVersion2() {
@@ -150,17 +154,19 @@ function getActiveBuildVersion2() {
         return String(APP_BUILD_VERSION).trim();
     }
     const params = new URLSearchParams(window.location.search);
-    return (params.get('v') || '325').trim();
+    return (params.get('v') || '326').trim();
 }
 
 function mostraVersioneAttiva2() {
     const ver = getActiveBuildVersion2();
     const params = new URLSearchParams(window.location.search);
     const urlVer = params.get('v') || ver;
+    const cfg = getGeminiConfig2();
     alert(
         "ℹ️ Informazioni Versione App\n\n" +
         "• Versione codice attiva: v" + ver + "\n" +
-        "• Parametro ?v nell'indirizzo: " + urlVer
+        "• Parametro ?v nell'indirizzo: " + urlVer + "\n" +
+        "• Modello Gemini attivo: " + (cfg.model || MACRO_MODEL_PRESET)
     );
 }
 
@@ -263,48 +269,138 @@ async function fetchLiveGeminiModels2(apiKey) {
         .filter(Boolean);
 }
 
+function ensureSv2ModelPickerModal() {
+    if (_sv2ModelPickerOverlay) return _sv2ModelPickerOverlay;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'sv2-model-picker-overlay';
+    overlay.style.cssText = [
+        'position:fixed',
+        'inset:0',
+        'background:rgba(0,0,0,0.85)',
+        'display:none',
+        'align-items:center',
+        'justify-content:center',
+        'z-index:100001',
+        'padding:14px',
+        'box-sizing:border-box'
+    ].join(';');
+
+    overlay.innerHTML = `
+        <div style="width:100%; max-width:460px; max-height:90vh; overflow-y:auto; background:#1a2228; border:2px solid #4fc3f7; border-radius:14px; padding:16px; color:#fff; box-sizing:border-box; font-family:system-ui, sans-serif;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; border-bottom:1px solid #2e3d48; padding-bottom:10px;">
+                <strong style="color:#81d4fa; font-size:17px;">🤖 Seleziona Modello Gemini</strong>
+                <button type="button" id="sv2-model-picker-close" style="padding:6px 12px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:14px;">✕ Chiudi</button>
+            </div>
+
+            <div id="sv2-model-active-banner" style="background:#102a1c; border:1px solid #4caf50; border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:14px; color:#c8e6c9; line-height:1.4;"></div>
+
+            <div id="sv2-model-feedback-box" style="display:none; background:#143347; border:1px solid #4fc3f7; border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:14px; color:#e1f5fe; font-weight:bold; line-height:1.4;"></div>
+
+            <div id="sv2-model-buttons-list" style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:12px;"></div>
+
+            <div style="font-size:12px; color:#b0bec5; line-height:1.35;">
+                Tocca un pulsante qui sopra per impostarlo subito in memoria. Quando un modello è attivo diventa verde con spunta ✅.
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    _sv2ModelPickerOverlay = overlay;
+
+    const closeBtn = document.getElementById('sv2-model-picker-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            overlay.style.display = 'none';
+        });
+    }
+
+    return overlay;
+}
+
+function renderModelPickerButtons2(modelsList, feedbackMessage) {
+    const overlay = ensureSv2ModelPickerModal();
+    const banner = document.getElementById('sv2-model-active-banner');
+    const feedbackBox = document.getElementById('sv2-model-feedback-box');
+    const listBox = document.getElementById('sv2-model-buttons-list');
+    const current = getGeminiConfig2();
+    const activeModel = (current.model || MACRO_MODEL_PRESET).trim();
+
+    if (banner) {
+        banner.innerHTML = `Modello attualmente in uso nell'app: <strong>${activeModel}</strong>`;
+    }
+
+    if (feedbackBox) {
+        if (feedbackMessage) {
+            feedbackBox.style.display = 'block';
+            feedbackBox.innerText = feedbackMessage;
+        } else {
+            feedbackBox.style.display = 'none';
+            feedbackBox.innerText = '';
+        }
+    }
+
+    if (!listBox) return;
+    listBox.innerHTML = '';
+
+    modelsList.forEach((modelName) => {
+        const isSelected = activeModel === modelName;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.cssText = [
+            'width:100%',
+            'padding:13px 14px',
+            'border-radius:10px',
+            'font-size:15px',
+            'font-weight:bold',
+            'text-align:left',
+            'cursor:pointer',
+            'display:flex',
+            'justify-content:space-between',
+            'align-items:center',
+            'box-sizing:border-box',
+            isSelected
+                ? 'background:#2e7d32; color:#ffffff; border:2px solid #a5d6a7;'
+                : 'background:#263238; color:#eceff1; border:1px solid #546e7a;'
+        ].join(';');
+
+        btn.innerHTML = `
+            <span>${modelName}</span>
+            <span>${isSelected ? '✅ ATTIVO' : 'Tocca per usare'}</span>
+        `;
+
+        btn.addEventListener('click', () => {
+            saveGeminiConfig2(current.apiKey, modelName);
+            renderModelPickerButtons2(
+                modelsList,
+                `✔ Selezione ricevuta e salvata: ora il modello attivo è "${modelName}".`
+            );
+        });
+
+        listBox.appendChild(btn);
+    });
+
+    overlay.style.display = 'flex';
+}
+
 async function mostraModelliGeminiDisponibili2() {
-    const ok = await askAdminPassword2("Inserisci la password per vedere e scegliere il modello");
+    const ok = await askAdminPassword2("Inserisci la password per vedere e selezionare il modello");
     if (!ok) return;
 
     const current = getGeminiConfig2();
     let liveModels = [];
-    let liveError = '';
 
     if (current.apiKey) {
         try {
             liveModels = await fetchLiveGeminiModels2(current.apiKey);
         } catch (err) {
-            liveError = err.message || 'Errore lettura modelli API';
+            liveModels = [];
         }
     }
 
     const merged = Array.from(new Set([...liveModels, ...GEMINI_KNOWN_MODELS]));
-    const formattedList = merged.map((name, idx) => {
-        const attivo = (current.model || '').trim() === name ? ' [ATTIVO]' : '';
-        return `${idx + 1}. ${name}${attivo}`;
-    }).join("\n");
-
-    const fonteNota = liveModels.length > 0
-        ? "\n(Include modelli verificati dalla chiave API)"
-        : (liveError ? "\n(Elenco standard; verifica live non riuscita: " + liveError + ")" : "\n(Elenco standard dei modelli riconosciuti)");
-
-    const chosen = prompt(
-        "Modelli Gemini disponibili:\n\n" +
-        formattedList +
-        fonteNota +
-        "\n\nScrivi il numero (es. 1) o il nome del modello da attivare, oppure premi Annulla:",
-        current.model || MACRO_MODEL_PRESET
+    renderModelPickerButtons2(
+        merged,
+        `Modello attivo al momento: "${current.model || MACRO_MODEL_PRESET}". Tocca un modello per attivarlo.`
     );
-
-    if (chosen !== null && chosen.trim()) {
-        const trimmed = chosen.trim();
-        const num = parseInt(trimmed, 10);
-        let selectedModel = trimmed;
-        if (!Number.isNaN(num) && String(num) === trimmed && num >= 1 && num <= merged.length) {
-            selectedModel = merged[num - 1];
-        }
-        saveGeminiConfig2(current.apiKey, selectedModel);
-        alert("Modello Gemini impostato su: " + selectedModel);
-    }
 }
