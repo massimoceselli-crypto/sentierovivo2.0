@@ -820,18 +820,23 @@
             ];
             let lastErr = null;
             for (const url of endpoints) {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 8000);
                 try {
                     const resp = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        signal: controller.signal,
                         body: 'data=' + encodeURIComponent(query)
                     });
+                    clearTimeout(timer);
                     if (!resp.ok) {
                         lastErr = new Error('HTTP ' + resp.status);
                         continue;
                     }
                     return await resp.json();
                 } catch (e) {
+                    clearTimeout(timer);
                     lastErr = e;
                 }
             }
@@ -843,14 +848,14 @@
             const poiModal = document.getElementById('sentiero2-poi-modal');
             if (!box) return;
 
-            box.innerHTML = `<div style="color:#ffd54f; font-weight:bold;">⏳ Ricerca in corso per "${category}"...</div>`;
+            box.innerHTML = `<div style="color:#ffd54f; font-weight:bold;">⏳ Ricerca in corso per "${category}" (max 8 secondi per server)...</div>`;
             if (poiModal) poiModal.scrollTop = 0;
             box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             const center = getPoiSearchCenter2();
             const radius = 5000;
             const filter = buildPoiOverpassFilter2(category, center.lat, center.lon, radius);
-            const query = `[out:json][timeout:15];${filter}out center 25;`;
+            const query = `[out:json][timeout:7];${filter}out center 25;`;
 
             try {
                 const data = await queryOverpassWithFallback2(query);
@@ -890,7 +895,7 @@
                 box.innerHTML = `
                     <div style="font-weight:bold; color:#a5d6a7; margin-bottom:12px; font-size:16px;">📍 ${category} (${uniqueItems.length} trovati nei dintorni)</div>
                     ${uniqueItems.map((p) => `
-                        <div style="background:#262d2a; border:1px solid #3f534b; border-radius:99px; padding:12px; margin-bottom:10px;">
+                        <div style="background:#262d2a; border:1px solid #3f534b; border-radius:10px; padding:12px; margin-bottom:10px;">
                             <div style="font-size:16px; font-weight:bold; color:#ffffff; margin-bottom:5px;">• ${p.name}</div>
                             <div style="font-size:14px; color:#cfd8dc; margin-bottom:4px;">📍 <strong>Indirizzo:</strong> ${p.address}</div>
                             <div style="font-size:14px; color:#80cbc4;">📞 <strong>Telefono:</strong> ${p.phone}</div>
@@ -899,7 +904,7 @@
                 `;
                 if (poiModal) poiModal.scrollTop = 0;
             } catch (err) {
-                box.innerHTML = `<div style="color:#ef9a9a;">Il server mappe ha impiegato troppo tempo o ha rifiutato temporaneamente la richiesta. Riprova tra qualche secondo.</div>`;
+                box.innerHTML = `<div style="color:#ef9a9a; line-height:1.45;">Il server mappe non ha risposto in tempo per <strong>${category}</strong>. Tocca di nuovo la categoria tra qualche secondo per riprovare.</div>`;
             }
         }
 
@@ -1122,6 +1127,11 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            if (typeof APP_BUILD_VERSION !== 'undefined') {
+                setTimeout(() => {
+                    alert("SentieroVivo 2.0 - Versione attiva: v" + APP_BUILD_VERSION);
+                }, 250);
+            }
             updateVoiceToggleButton2();
             refreshLicenseUi();
             loadSavedInputs();
