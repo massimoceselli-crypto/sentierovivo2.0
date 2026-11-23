@@ -638,18 +638,12 @@
         }
 
         function sanitizeGeminiModel2(rawModel) {
-            const m = (rawModel || '').trim().replace(/^models\//i, '');
+            const m = (rawModel || '').trim().replace(/^models\//i, '').replace(/\s+/g, '');
             return m || 'gemini-2.5-flash';
         }
 
-        async function callGeminiApi2(promptText) {
-            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash' };
-            const apiKey = (cfg.apiKey || '').trim();
-            if (!apiKey) return { text: null, reason: 'no_key' };
-
-            const modelName = sanitizeGeminiModel2(cfg.model);
+        async function postGeminiForModel2(modelName, apiKey, promptText) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 15000);
 
@@ -674,22 +668,48 @@
                         const errJson = await response.json();
                         detail = errJson?.error?.message || '';
                     } catch (e) {}
-                    return { text: null, reason: 'http_error', status: response.status, detail };
+                    return { text: null, reason: 'http_error', status: response.status, detail, modelUsed: modelName };
                 }
 
                 const data = await response.json();
                 const textResult = data?.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (textResult && textResult.trim()) {
-                    return { text: textResult.trim(), reason: 'ok' };
+                    return { text: textResult.trim(), reason: 'ok', modelUsed: modelName };
                 }
-                return { text: null, reason: 'empty' };
+                return { text: null, reason: 'empty', modelUsed: modelName };
             } catch (err) {
                 clearTimeout(timer);
                 if (err && err.name === 'AbortError') {
-                    return { text: null, reason: 'timeout' };
+                    return { text: null, reason: 'timeout', modelUsed: modelName };
                 }
-                return { text: null, reason: 'network_error' };
+                return { text: null, reason: 'network_error', modelUsed: modelName };
             }
+        }
+
+        async function callGeminiApi2(promptText) {
+            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash' };
+            const apiKey = (cfg.apiKey || '').trim();
+            if (!apiKey) return { text: null, reason: 'no_key' };
+
+            const primaryModel = sanitizeGeminiModel2(cfg.model);
+            const fallbackCandidates = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+            const modelsToTry = Array.from(new Set([primaryModel, ...fallbackCandidates]));
+
+            let lastResult = null;
+            for (const mName of modelsToTry) {
+                const res = await postGeminiForModel2(mName, apiKey, promptText);
+                lastResult = res;
+                if (res.reason === 'ok') {
+                    if (mName !== primaryModel && typeof saveGeminiConfig2 === 'function') {
+                        saveGeminiConfig2(apiKey, mName);
+                    }
+                    return res;
+                }
+                if (res.status !== 404) {
+                    return res;
+                }
+            }
+            return lastResult || { text: null, reason: 'network_error' };
         }
 
         async function processAssistantQuestion2(question) {
@@ -737,7 +757,7 @@
                     answer = `Gemini ha impiegato troppo tempo a rispondere. Riprova tra qualche istante.`;
                 } else if (resGemini && resGemini.reason === 'http_error') {
                     const extra = resGemini.detail ? ` (${resGemini.detail})` : '';
-                    answer = `Errore Gemini ${resGemini.status}${extra}.`;
+                    answer = `Errore Gemini ${resGemini.status} su ${resGemini.modelUsed || 'modello'}${extra}.`;
                 } else {
                     answer = `Non sono riuscito a collegarmi a Gemini. Verifica la connessione internet e la chiave API.`;
                 }
