@@ -2,7 +2,18 @@ const GEMINI2_CONFIG_KEY = 'sv2_gemini_config';
 const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
 const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
 const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
-const MACRO_MODEL_PRESET = 'gemini-1.5-flash';
+const MACRO_MODEL_PRESET = 'gemini-2.5-flash';
+const APP_BUILD_VERSION = '319';
+
+const GEMINI_KNOWN_MODELS = [
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-2.5-pro',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro'
+];
 
 let _sv2PasswordModalOverlay = null;
 let _sv2PasswordResolver = null;
@@ -134,6 +145,16 @@ function saveGeminiConfig2(apiKey, model) {
     localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(updated));
 }
 
+function mostraVersioneAttiva2() {
+    const params = new URLSearchParams(window.location.search);
+    const urlVer = params.get('v') || 'non indicato nell\'URL';
+    alert(
+        "ℹ️ Informazioni Versione App\n\n" +
+        "• Versione codice attiva: v" + APP_BUILD_VERSION + "\n" +
+        "• Parametro ?v nell'indirizzo: " + urlVer
+    );
+}
+
 async function askAdminPassword2(descMessage) {
     const entered = await requestAdminPasswordModal2(
         '🔒 Accesso Protetto',
@@ -177,6 +198,7 @@ async function eseguiMacroConfigurazioneCompleta2() {
 
     alert(
         "⚡ MACRO eseguita con successo!\n\n" +
+        "• Versione app: v" + APP_BUILD_VERSION + "\n" +
         "• Modello configurato: " + MACRO_MODEL_PRESET + "\n" +
         "• Licenza e Chiave API attivate.\n\n" +
         "L'applicazione è ora pronta all'uso."
@@ -202,7 +224,11 @@ async function apriPannelloGeminiProtetto2(modo) {
             alert("Chiave API Gemini salvata.");
         }
     } else if (modo === 'model') {
-        const newModel = prompt("Inserisci il modello Gemini:", current.model);
+        const elencoTesto = GEMINI_KNOWN_MODELS.join(', ');
+        const newModel = prompt(
+            "Modelli consigliati: " + elencoTesto + "\n\nInserisci il modello Gemini:",
+            current.model
+        );
         if (newModel !== null) {
             saveGeminiConfig2(current.apiKey, newModel);
             alert("Modello Gemini salvato: " + newModel);
@@ -210,8 +236,52 @@ async function apriPannelloGeminiProtetto2(modo) {
     }
 }
 
+async function fetchLiveGeminiModels2(apiKey) {
+    const cleanKey = (apiKey || '').trim();
+    if (!cleanKey) return [];
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cleanKey)}`;
+    const resp = await fetch(url);
+    if (!resp.ok) {
+        throw new Error('HTTP ' + resp.status);
+    }
+    const data = await resp.json();
+    const list = Array.isArray(data.models) ? data.models : [];
+    return list
+        .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+        .map((m) => (m.name || '').replace(/^models\//i, ''))
+        .filter(Boolean);
+}
+
 async function mostraModelliGeminiDisponibili2() {
     const ok = await askAdminPassword2("Inserisci la password per vedere i modelli");
     if (!ok) return;
-    alert("Modello configurato:\n- gemini-1.5-flash");
+
+    const current = getGeminiConfig2();
+    let liveModels = [];
+    let liveError = '';
+
+    if (current.apiKey) {
+        try {
+            liveModels = await fetchLiveGeminiModels2(current.apiKey);
+        } catch (err) {
+            liveError = err.message || 'Errore lettura modelli API';
+        }
+    }
+
+    const merged = Array.from(new Set([...liveModels, ...GEMINI_KNOWN_MODELS]));
+    const formattedList = merged.map((name) => {
+        const attivo = (current.model || '').trim() === name ? ' [ATTIVO]' : '';
+        return "• " + name + attivo;
+    }).join("\n");
+
+    const fonteNota = liveModels.length > 0
+        ? "\n(Include modelli verificati in tempo reale dalla tua chiave API)"
+        : (liveError ? "\n(Elenco standard; verifica live non riuscita: " + liveError + ")" : "\n(Elenco standard dei modelli riconosciuti)");
+
+    alert(
+        "Modelli Gemini riconosciuti:\n\n" +
+        formattedList +
+        fonteNota +
+        "\n\nPer cambiare modello usa 'Imposta modello Gemini'."
+    );
 }
