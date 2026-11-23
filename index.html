@@ -1,406 +1,1297 @@
-const GEMINI2_CONFIG_KEY = 'sv2_gemini_config';
-const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
-const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
-const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
-const MACRO_MODEL_PRESET = 'gemini-2.5-flash-lite';
-const APP_BUILD_VERSION = '326';
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sentierovivo2.0</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%232e7d32'/><polygon points='50,20 80,75 20,75' fill='%23ffffff'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%232e7d32'/><polygon points='50,20 80,75 20,75' fill='%23ffffff'/></svg>">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        @keyframes sosPulse2 {
+            0% { background-color: #d32f2f; box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.85); }
+            50% { background-color: #ff1744; box-shadow: 0 0 14px 4px rgba(255, 23, 68, 0.7); }
+            100% { background-color: #d32f2f; box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.85); }
+        }
+        .sos-blink-btn { animation: sosPulse2 1.2s infinite; }
 
-const GEMINI_KNOWN_MODELS = [
-    'gemini-2.5-flash-lite',
-    'gemini-2.5-flash',
-    'gemini-2.5-pro',
-    'gemini-2.0-flash-lite',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro'
-];
+        @keyframes gpsBlinkGreen {
+            0% { background-color: #4caf50; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.95); opacity: 1; }
+            50% { background-color: #a5d6a7; box-shadow: 0 0 14px 6px rgba(76, 175, 80, 0.75); opacity: 0.25; }
+            100% { background-color: #4caf50; box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.95); opacity: 1; }
+        }
+        @keyframes gpsBlinkAmber {
+            0% { background-color: #ffc107; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.95); opacity: 1; }
+            50% { background-color: #ffe082; box-shadow: 0 0 14px 6px rgba(255, 193, 7, 0.7); opacity: 0.25; }
+            100% { background-color: #ffc107; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.95); opacity: 1; }
+        }
 
-let _sv2PasswordModalOverlay = null;
-let _sv2PasswordResolver = null;
-let _sv2ModelPickerOverlay = null;
+        @keyframes mapUserPulseRing {
+            0% { transform: scale(0.7); opacity: 0.9; }
+            70% { transform: scale(2.2); opacity: 0; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
 
-function ensureSv2PasswordModal() {
-    if (_sv2PasswordModalOverlay) return _sv2PasswordModalOverlay;
+        .sv2-user-pulse-wrap {
+            position: relative;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sv2-user-pulse-halo {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(76, 175, 80, 0.45);
+            border: 2px solid rgba(165, 214, 167, 0.9);
+            animation: mapUserPulseRing 1.6s infinite ease-out;
+            pointer-events: none;
+        }
+        .sv2-user-pulse-arrow {
+            position: absolute;
+            top: 0px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 10px solid #ffeb3b;
+            transform-origin: 50% 19px;
+            z-index: 3;
+            pointer-events: none;
+        }
+        .sv2-user-pulse-dot {
+            position: relative;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #2e7d32;
+            border: 2.5px solid #ffffff;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.75);
+            z-index: 2;
+        }
 
-    const overlay = document.createElement('div');
-    overlay.id = 'sv2-password-modal-overlay';
-    overlay.style.cssText = [
-        'position:fixed',
-        'inset:0',
-        'background:rgba(0,0,0,0.78)',
-        'display:none',
-        'align-items:center',
-        'justify-content:center',
-        'z-index:100000',
-        'padding:16px',
-        'box-sizing:border-box'
-    ].join(';');
+        #gps-status-dot.gps-active,
+        .gps-active {
+            background-color: #4caf50 !important;
+            animation: gpsBlinkGreen 1s infinite ease-in-out !important;
+        }
+        #gps-status-dot.gps-waiting,
+        .gps-waiting {
+            background-color: #ffc107 !important;
+            animation: gpsBlinkAmber 1.2s infinite ease-in-out !important;
+        }
 
-    overlay.innerHTML = `
-        <div style="width:100%; max-width:400px; background:#1e1e1e; border:2px solid #ffb300; border-radius:12px; padding:16px; color:#fff; box-sizing:border-box; font-family:system-ui, sans-serif;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <strong id="sv2-pwd-modal-title" style="color:#ffe082; font-size:16px;">🔒 Verifica Password</strong>
-                <button type="button" id="sv2-pwd-cancel-top" style="padding:5px 10px; border:none; border-radius:6px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:13px;">Chiudi</button>
-            </div>
-            <p id="sv2-pwd-modal-desc" style="margin:0 0 12px 0; font-size:14px; color:#eceff1; line-height:1.4;">Inserisci la password</p>
-            <input type="password" id="sv2-pwd-modal-input" value="" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Inserisci la password..." style="width:100%; padding:11px; border-radius:8px; border:1px solid #666; background:#2a2a2a; color:#fff; font-size:16px; margin-bottom:12px; box-sizing:border-box;">
-            <div style="display:flex; gap:10px;">
-                <button type="button" id="sv2-pwd-cancel-btn" style="flex:1; padding:11px; border:none; border-radius:8px; background:#455a64; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">Annulla</button>
-                <button type="button" id="sv2-pwd-confirm-btn" style="flex:1; padding:11px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">Conferma</button>
+        .sv2-fullscreen-drawer {
+            position: fixed; inset: 0; width: 100vw; height: 100vh;
+            max-width: none !important; margin: 0 !important; border-radius: 0 !important;
+            overflow-y: auto; -webkit-overflow-scrolling: touch; z-index: 9999;
+            padding: 16px !important; box-sizing: border-box;
+        }
+
+        .sv2-menu-big-btn {
+            padding: 14px 12px !important; font-size: 16px !important;
+            line-height: 1.3; border-radius: 10px !important; width: 100%;
+        }
+
+        .sv2-poi-cat-btn {
+            padding: 13px 12px; border: 1px solid #455a64; border-radius: 9px;
+            background: #263238; color: #ffffff; font-size: 15px; font-weight: bold;
+            text-align: left; cursor: pointer; width: 100%;
+        }
+        .sv2-poi-cat-btn:hover { background: #37474f; }
+    </style>
+</head>
+<body style="margin:0; padding:10px; background:#121212; color:#ffffff; font-family:system-ui, sans-serif;">
+
+    <div id="welcome-box"></div>
+
+    <div id="license-panel" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:2px solid #2e7d32; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color:#a5d6a7; font-size:15px;">🔑 Attivazione Codice Licenza</strong>
+            <button onclick="document.getElementById('license-panel').style.display='none'" style="padding:5px 10px; border:none; border-radius:6px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:13px;">Chiudi</button>
+        </div>
+        <p id="license-status-text" style="margin:0 0 10px 0; font-size:14px; color:#eceff1;">Inserisci il codice di licenza per attivare l'applicazione.</p>
+        <input id="license-code-input" type="text" placeholder="Inserisci codice di sblocco..." style="width:100%; padding:11px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:10px; box-sizing:border-box; font-size:15px;">
+        <button onclick="handleLicenseSubmit()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Attiva Licenza</button>
+    </div>
+
+    <div id="sv2-top-bar" style="max-width:520px; margin:6px auto 10px auto; display:flex; align-items:center; justify-content:space-between; gap:10px; background:#1c1c1c; padding:10px 12px; border-radius:12px; border:1px solid #333;">
+        <div onclick="startGpsTrackingNow2()" style="display:flex; align-items:center; gap:9px; min-width:0; flex:1; cursor:pointer;" title="Tocca per riprovare il GPS">
+            <span id="gps-status-dot" class="gps-waiting" style="display:inline-block; width:16px; height:16px; border-radius:50%; flex-shrink:0;"></span>
+            <span id="gps-status-text" style="font-size:14px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">GPS in attesa...</span>
+        </div>
+        <span id="track2-status-label" style="font-size:12px; color:#81c784; white-space:nowrap;">Pronto</span>
+        <button class="sos-blink-btn" onclick="toggleSosPanel2()" style="padding:8px 14px; border:none; border-radius:8px; color:#ffffff; font-weight:bold; font-size:14px; cursor:pointer; flex-shrink:0;">SOS</button>
+    </div>
+
+    <div id="sv2-assistant-panel" style="max-width:520px; margin:8px auto 10px auto; background:#182433; padding:14px; border-radius:12px; border:1px solid #1e88e5; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
+            <h3 style="margin:0; color:#90caf9; font-size:17px;">ℹ️ Assistente Info</h3>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button id="btn-voice-toggle2" onclick="toggleAssistantVoice2()" style="padding:7px 12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">🔊 Voce: ON</button>
+                <button onclick="closeAssistantInfo2()" style="padding:7px 12px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">✕ Chiudi</button>
             </div>
         </div>
-    `;
 
-    document.body.appendChild(overlay);
-    _sv2PasswordModalOverlay = overlay;
+        <div id="assistant-status-summary" style="background:#101924; padding:10px 12px; border-radius:8px; font-size:14px; color:#e3f2fd; margin-bottom:10px; line-height:1.45;"></div>
 
-    const inputEl = document.getElementById('sv2-pwd-modal-input');
-    const confirmBtn = document.getElementById('sv2-pwd-confirm-btn');
-    const cancelBtn = document.getElementById('sv2-pwd-cancel-btn');
-    const cancelTopBtn = document.getElementById('sv2-pwd-cancel-top');
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button id="btn-mic-ask2" onclick="startAssistantVoiceQuery2()" style="flex:1; padding:11px; border:none; border-radius:8px; background:#1565c0; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">🎤 Detta Domanda</button>
+            <button onclick="stopAssistantSpeech2()" style="padding:11px 12px; border:none; border-radius:8px; background:#37474f; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">🔇 Muto</button>
+        </div>
 
-    function finishModal(val) {
-        const currentInput = document.getElementById('sv2-pwd-modal-input');
-        if (currentInput) currentInput.value = '';
-        overlay.style.display = 'none';
-        const resolver = _sv2PasswordResolver;
-        _sv2PasswordResolver = null;
-        if (typeof resolver === 'function') {
-            resolver(val);
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <input id="assistant-text-input" type="text" placeholder="Scrivi o detta qui, poi premi Chiedi..." onkeydown="if(event.key==='Enter') askAssistantText2()" style="flex:1; padding:10px; border-radius:8px; border:1px solid #455a64; background:#223142; color:#fff; font-size:14px; box-sizing:border-box;">
+            <button onclick="askAssistantText2()" style="padding:10px 14px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">Chiedi</button>
+        </div>
+
+        <div id="assistant-reply-box" style="background:#121b26; border:1px solid #2c435e; border-radius:8px; padding:10px 12px; font-size:14px; color:#bbdefb; min-height:42px; line-height:1.45;">
+            Premi <strong>Detta Domanda</strong> oppure scrivi nella casella e tocca <strong>Chiedi</strong>.
+        </div>
+    </div>
+
+    <div id="sos-setup-panel" style="max-width:520px; margin:8px auto 10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #d32f2f; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="margin:0; color:#ff8a80; font-size:16px;">Contatti Emergenza S.O.S.</h3>
+            <button onclick="toggleSosPanel2()" style="padding:6px 12px; border:none; border-radius:6px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:14px;">Chiudi</button>
+        </div>
+        <input id="sos-name-input" type="text" placeholder="Il tuo nome e cognome" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <input id="sos-c1-input" type="text" placeholder="Contatto 1 (obbligatorio)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <input id="sos-c2-input" type="text" placeholder="Contatto 2 (opzionale)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <button onclick="handleSaveSos()" style="width:100%; padding:11px; border:none; border-radius:8px; background:#d32f2f; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Salva Contatti S.O.S.</button>
+        <p id="sos-feedback" style="margin:8px 0 0 0; font-size:13px; color:#ffcc80;"></p>
+    </div>
+
+    <div id="sv2-map-wrap" style="max-width:520px; margin:0 auto 10px auto;">
+        <div id="map2" style="position:relative; width:100%; height:62vh; min-height:340px; border-radius:12px; border:2px solid #2e7d32; overflow:hidden; background:#1b2620;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px;">
+            <button id="btn-course-up2" type="button" onclick="toggleCourseUpMode2()" style="flex:1; padding:8px 10px; border:1px solid #455a64; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">🧭 Direzione su: ATTIVA</button>
+            <button type="button" onclick="resetMapNorthUp2()" style="padding:8px 12px; border:1px solid #455a64; border-radius:8px; background:#1c2833; color:#90caf9; font-weight:bold; font-size:13px; cursor:pointer;">⬆️ Nord su</button>
+        </div>
+    </div>
+
+    <div id="sv2-main-buttons" style="max-width:520px; margin:0 auto 12px auto; display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
+        <button onclick="handleStartTrack2()" style="padding:12px 6px; border:none; border-radius:10px; background:#2e7d32; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">▶️ Avvia</button>
+        <button id="btn-pause-track2" onclick="handlePauseTrack2()" style="padding:12px 6px; border:none; border-radius:10px; background:#455a64; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">⏸️ Pausa</button>
+        <button onclick="openSaveTrackModal2()" style="padding:12px 6px; border:none; border-radius:10px; background:#c62828; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">⏹️ Stop e Salva</button>
+        <button onclick="handleAssistantInfo2()" style="padding:12px 6px; border:none; border-radius:10px; background:#1565c0; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">ℹ️ Assistente Info</button>
+        <button onclick="handleManualWp2()" style="padding:12px 6px; border:none; border-radius:10px; background:#ef6c00; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">🏁 Waypoint</button>
+        <button onclick="toggleMenuDrawer2()" style="padding:12px 6px; border:none; border-radius:10px; background:#37474f; color:#fff; font-weight:bold; font-size:14px; cursor:pointer;">☰ Menu</button>
+    </div>
+
+    <div id="sentiero2-save-modal" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #c62828; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="margin:0; color:#ef9a9a; font-size:16px;">Salvataggio Percorso</h3>
+            <button onclick="closeSaveTrackModal2()" style="padding:6px 12px; border:none; border-radius:6px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:14px;">Chiudi</button>
+        </div>
+        <input id="track2-name-input" type="text" placeholder="Nome percorso (es. Giro nei campi)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <select id="save2-folder-select" style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;"></select>
+        <input id="save2-new-folder-input" type="text" placeholder="Oppure nuova cartella..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#fff; margin-bottom:8px; box-sizing:border-box; font-size:15px;">
+        <button onclick="handleSaveTrack2()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">Conferma e Salva</button>
+    </div>
+
+    <div id="sentiero2-menu-drawer" class="sv2-fullscreen-drawer" style="background:#151515; display:none;">
+        <div style="max-width:680px; margin:0 auto; padding-bottom:40px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; position:sticky; top:0; background:#151515; padding:10px 0; border-bottom:1px solid #333; z-index:2;">
+                <h2 style="margin:0; color:#90caf9; font-size:22px;">Menu SentieroVivo 2.0</h2>
+                <button onclick="toggleMenuDrawer2()" style="padding:9px 16px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">✕ Chiudi</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:20px;">
+                <button class="sv2-menu-big-btn" onclick="apriCartellaPercorsi2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">📁 Cartella percorsi</button>
+                <button class="sv2-menu-big-btn" onclick="handleAudioWp2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">🎙️ Registra un vocale</button>
+                <button class="sv2-menu-big-btn" onclick="menuRegistraVideo2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">🎥 Registra un video</button>
+                <button class="sv2-menu-big-btn" onclick="menuScattaFotoWaypoint2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">📸 Scatta foto e waypoint</button>
+                <button class="sv2-menu-big-btn" onclick="menuRitornoARitroso2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">↩️ Ritorno a ritroso</button>
+                <button class="sv2-menu-big-btn" onclick="menuCreaNuovoPercorsoRientro2()" style="text-align:left; border:none; background:#262626; color:#fff; font-weight:bold; cursor:pointer;">🧭 Crea nuovo percorso di rientro</button>
+            </div>
+
+            <input id="wp2-note-input" type="text" placeholder="Testo nota vocale o didascalia media..." style="width:100%; padding:12px; border-radius:8px; border:1px solid #555; background:#262626; color:#fff; margin-bottom:16px; box-sizing:border-box; font-size:16px;">
+            <input id="wp2-photo-file" type="file" accept="image/*" capture="environment" onchange="handlePhotoWp2(event)" style="display:none;">
+            <input id="wp2-video-file" type="file" accept="video/*" capture="environment" onchange="handleVideoWp2(event)" style="display:none;">
+
+            <div style="border-top:1px solid #333; padding-top:16px; margin-bottom:20px;">
+                <div style="font-size:18px; color:#ffd54f; font-weight:bold; margin-bottom:12px;">Funzioni Esplorazione</div>
+                <div style="display:grid; grid-template-columns:1fr; gap:10px;">
+                    <button class="sv2-menu-big-btn" onclick="openPoiMenu2()" style="text-align:left; border:1px solid #2e7d32; background:#1b2e21; color:#a5d6a7; font-weight:bold; cursor:pointer;">📍 CERCA PUNTI DI INTERESSE</button>
+                    <button class="sv2-menu-big-btn" onclick="fetchMeteo24Ore2()" style="text-align:left; border:1px solid #1565c0; background:#12253a; color:#90caf9; font-weight:bold; cursor:pointer;">🌦️ METEO 24 ORE</button>
+                </div>
+                <div id="meteo-results-box" style="margin-top:10px; display:none; background:#1c2833; border:1px solid #2c3e50; border-radius:10px; padding:12px; font-size:14px; color:#ecf0f1;"></div>
+            </div>
+
+            <div style="border-top:1px solid #333; padding-top:16px;">
+                <div style="font-size:18px; color:#80cbc4; font-weight:bold; margin-bottom:12px;">Licenza e Gemini (protetti da password)</div>
+                <div style="display:grid; grid-template-columns:1fr; gap:10px;">
+                    <button class="sv2-menu-big-btn" onclick="eseguiMacroConfigurazioneCompleta2()" style="text-align:left; border:1px solid #ffb300; background:#3a2b09; color:#ffe082; font-weight:bold; cursor:pointer;">⚡ MACRO</button>
+                    <button class="sv2-menu-big-btn" onclick="unlockAndShowLicenseBox2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🔑 Inserisci codice di licenza</button>
+                    <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('key')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">⚙️ Imposta chiave API Gemini</button>
+                    <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('model')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🤖 Imposta modello Gemini</button>
+                    <button class="sv2-menu-big-btn" onclick="mostraModelliGeminiDisponibili2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">📋 Mostra modelli disponibili</button>
+                    <button class="sv2-menu-big-btn" onclick="mostraVersioneAttiva2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🏷️ Verifica versione app attiva</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sentiero2-poi-modal" class="sv2-fullscreen-drawer" style="background:#141816; display:none;">
+        <div style="max-width:680px; margin:0 auto; padding-bottom:40px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; position:sticky; top:0; background:#141816; padding:10px 0; border-bottom:1px solid #2e7d32; z-index:3;">
+                <h2 style="margin:0; color:#a5d6a7; font-size:22px;">📍 Punti di Interesse</h2>
+                <button onclick="closePoiMenu2()" style="padding:9px 16px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">✕ Chiudi</button>
+            </div>
+
+            <div id="poi-results-box" style="background:#1e2421; border:2px solid #81c784; border-radius:10px; padding:14px; font-size:15px; color:#eceff1; margin-bottom:16px;">
+                Clicca su una categoria qui sotto per visualizzare subito i risultati qui in alto.
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr; gap:9px;">
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('STRADE IN MONTAGNA')" style="background:#2e4c38; border-color:#81c784; color:#a5d6a7;">🏔️ STRADE IN MONTAGNA</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('SENTIERI NELLE VICINANZE')">🥾 SENTIERI NELLE VICINANZE</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('RIFUGI CAI E NON')">🏕️ RIFUGI CAI E NON</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('RISTORANTI')">🍽️ RISTORANTI</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('PIZZERIE')">🍕 PIZZERIE</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('BAR & PUB')">🍺 BAR & PUB</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('HOTEL')">🏨 HOTEL</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('MOTEL')">🛣️ MOTEL</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('PENSIONI')">🏡 PENSIONI</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('B & B')">🛏️ B & B</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('DISTRIBUTORI BENZINA')">⛽ DISTRIBUTORI BENZINA</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('FARMACIE')">💊 FARMACIE</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('GOMMISTI')">🛞 GOMMISTI</button>
+                <button class="sv2-poi-cat-btn" onclick="searchPoiCategory2('PUNTI DI INFORMAZIONI')">ℹ️ PUNTI DI INFORMAZIONI</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sentiero2-archivio-modal" style="max-width:520px; margin:10px auto; background:#1e1e1e; padding:14px; border-radius:12px; border:1px solid #90caf9; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="margin:0; color:#90caf9; font-size:16px;">Archivio Percorsi Salvati</h3>
+            <button onclick="document.getElementById('sentiero2-archivio-modal').style.display='none'" style="padding:6px 12px; border:none; border-radius:6px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:14px;">Chiudi</button>
+        </div>
+        <div id="saved-tracks2-list" style="font-size:14px; color:#ccc;">Nessun percorso salvato al momento.</div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="benvenuto.js"></script>
+    <script src="licenza.js"></script>
+    <script src="mappa.js"></script>
+    <script src="contatti-sos.js"></script>
+    <script src="cartella-iniziale.js"></script>
+    <script src="tracciamento.js"></script>
+    <script src="waypoint.js"></script>
+    <script src="archivio.js"></script>
+    <script src="chiave-licenza.js"></script>
+    <script src="menu-sentiero.js?v=326"></script>
+    <script>
+        let currentGpsCoords2 = null;
+        let fallbackMap2 = null;
+        let fallbackUserMarker2 = null;
+        let gpsWatchId2 = null;
+        let lastCenteredCoords2 = null;
+        let lastHeadingDeg2 = 0;
+        let courseUpEnabled2 = true;
+        const VOICE_PREF_KEY2 = 'sv2_assistant_voice_enabled';
+
+        function createPulsingUserIcon2() {
+            return L.divIcon({
+                className: 'sv2-pulse-divicon',
+                html: '<div class="sv2-user-pulse-wrap"><span class="sv2-user-pulse-halo"></span><span id="sv2-user-arrow" class="sv2-user-pulse-arrow"></span><span class="sv2-user-pulse-dot"></span></div>',
+                iconSize: [38, 38],
+                iconAnchor: [19, 19]
+            });
         }
-    }
 
-    confirmBtn.addEventListener('click', () => {
-        finishModal(inputEl ? inputEl.value : '');
-    });
-
-    cancelBtn.addEventListener('click', () => {
-        finishModal(null);
-    });
-
-    cancelTopBtn.addEventListener('click', () => {
-        finishModal(null);
-    });
-
-    inputEl.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            finishModal(inputEl.value);
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            finishModal(null);
-        }
-    });
-
-    return overlay;
-}
-
-function requestAdminPasswordModal2(titleText, descText) {
-    return new Promise((resolve) => {
-        const overlay = ensureSv2PasswordModal();
-        const titleEl = document.getElementById('sv2-pwd-modal-title');
-        const descEl = document.getElementById('sv2-pwd-modal-desc');
-        const inputEl = document.getElementById('sv2-pwd-modal-input');
-
-        if (titleEl) titleEl.innerText = titleText || '🔒 Verifica Password';
-        if (descEl) descEl.innerText = descText || 'Inserisci la password';
-        if (inputEl) {
-            inputEl.value = '';
-            inputEl.setAttribute('value', '');
-        }
-
-        _sv2PasswordResolver = resolve;
-        overlay.style.display = 'flex';
-
-        setTimeout(() => {
-            if (inputEl) {
-                inputEl.value = '';
-                inputEl.focus();
+        function applyMapHeadingRotation2(deg) {
+            const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.getContainer === 'function')
+                ? sentieroMap
+                : fallbackMap2;
+            if (!activeMap || typeof activeMap.getContainer !== 'function') return;
+            const container = activeMap.getContainer();
+            const mapPane = container.querySelector('.leaflet-map-pane');
+            if (mapPane) {
+                mapPane.style.transformOrigin = '';
+                mapPane.style.transform = '';
             }
-        }, 80);
-    });
-}
-
-function getGeminiConfig2() {
-    const raw = localStorage.getItem(GEMINI2_CONFIG_KEY);
-    if (!raw) {
-        return { apiKey: '', model: MACRO_MODEL_PRESET };
-    }
-    try {
-        const parsed = JSON.parse(raw);
-        return {
-            apiKey: parsed.apiKey || '',
-            model: parsed.model || MACRO_MODEL_PRESET
-        };
-    } catch (e) {
-        return { apiKey: '', model: MACRO_MODEL_PRESET };
-    }
-}
-
-function saveGeminiConfig2(apiKey, model) {
-    const current = getGeminiConfig2();
-    const updated = {
-        apiKey: apiKey !== undefined ? apiKey.trim() : current.apiKey,
-        model: model !== undefined ? model.trim() : current.model
-    };
-    localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(updated));
-    if (typeof refreshAssistantSummary2 === 'function') {
-        refreshAssistantSummary2();
-    }
-}
-
-function getActiveBuildVersion2() {
-    if (typeof APP_BUILD_VERSION !== 'undefined' && APP_BUILD_VERSION) {
-        return String(APP_BUILD_VERSION).trim();
-    }
-    const params = new URLSearchParams(window.location.search);
-    return (params.get('v') || '326').trim();
-}
-
-function mostraVersioneAttiva2() {
-    const ver = getActiveBuildVersion2();
-    const params = new URLSearchParams(window.location.search);
-    const urlVer = params.get('v') || ver;
-    const cfg = getGeminiConfig2();
-    alert(
-        "ℹ️ Informazioni Versione App\n\n" +
-        "• Versione codice attiva: v" + ver + "\n" +
-        "• Parametro ?v nell'indirizzo: " + urlVer + "\n" +
-        "• Modello Gemini attivo: " + (cfg.model || MACRO_MODEL_PRESET)
-    );
-}
-
-async function askAdminPassword2(descMessage) {
-    const entered = await requestAdminPasswordModal2(
-        '🔒 Accesso Protetto',
-        descMessage || 'Inserisci la password'
-    );
-    if (entered === null) return false;
-    const cleanEntered = entered.trim().toUpperCase();
-    const cleanExpected = SENTIERO2_ADMIN_PASS.trim().toUpperCase();
-
-    if (cleanEntered === cleanExpected) {
-        return true;
-    }
-    alert("Password errata. Accesso negato.");
-    return false;
-}
-
-async function eseguiMacroConfigurazioneCompleta2() {
-    const entered = await requestAdminPasswordModal2(
-        '⚡ Attivazione MACRO',
-        'Inserisci la password per eseguire la macro'
-    );
-    if (entered === null) return;
-
-    if (entered.trim().toUpperCase() !== SENTIERO2_ADMIN_PASS.toUpperCase()) {
-        alert("Password errata! Accesso negato.");
-        return;
-    }
-
-    const currentVer = getActiveBuildVersion2();
-
-    if (typeof activateLicenseKey === 'function') {
-        activateLicenseKey(MACRO_LICENSE_KEY_PRESET);
-    }
-
-    saveGeminiConfig2(MACRO_API_KEY_PRESET, MACRO_MODEL_PRESET);
-
-    if (typeof refreshLicenseUi === 'function') {
-        refreshLicenseUi();
-    }
-
-    const drawer = document.getElementById('sentiero2-menu-drawer');
-    if (drawer) drawer.style.display = 'none';
-
-    alert(
-        "⚡ MACRO eseguita con successo!\n\n" +
-        "• Versione app: v" + currentVer + "\n" +
-        "• Modello configurato: " + MACRO_MODEL_PRESET + "\n" +
-        "• Licenza e Chiave API attivate.\n\n" +
-        "L'applicazione è ora pronta all'uso."
-    );
-}
-
-async function apriGestioneLicenzaDaMenu2() {
-    const ok = await askAdminPassword2("Inserisci la password per gestire la licenza");
-    if (!ok) return;
-    if (typeof showLicenseInputBox2 === 'function') {
-        showLicenseInputBox2();
-    }
-}
-
-async function apriPannelloGeminiProtetto2(modo) {
-    const ok = await askAdminPassword2("Inserisci la password per le impostazioni Gemini");
-    if (!ok) return;
-    const current = getGeminiConfig2();
-    if (modo === 'key') {
-        const newKey = prompt("Inserisci la chiave API Gemini:", current.apiKey);
-        if (newKey !== null) {
-            saveGeminiConfig2(newKey, current.model);
-            alert("Chiave API Gemini salvata.");
+            const arrowEl = container.querySelector('#sv2-user-arrow');
+            if (arrowEl) {
+                const angle = (courseUpEnabled2 && Number.isFinite(deg)) ? deg : 0;
+                arrowEl.style.transform = `rotate(${angle}deg)`;
+            }
         }
-    } else if (modo === 'model') {
-        const elencoTesto = GEMINI_KNOWN_MODELS.join(', ');
-        const newModel = prompt(
-            "Modelli consigliati: " + elencoTesto + "\n\nInserisci il modello Gemini:",
-            current.model || MACRO_MODEL_PRESET
-        );
-        if (newModel !== null && newModel.trim()) {
-            saveGeminiConfig2(current.apiKey, newModel.trim());
-            alert("Modello Gemini salvato: " + newModel.trim());
+
+        function updateCourseUpButton2() {
+            const btn = document.getElementById('btn-course-up2');
+            if (!btn) return;
+            btn.innerText = courseUpEnabled2 ? '🧭 Direzione su: ATTIVA' : '🧭 Direzione su: OFF';
+            btn.style.background = courseUpEnabled2 ? '#2e7d32' : '#263238';
         }
-    }
-}
 
-async function fetchLiveGeminiModels2(apiKey) {
-    const cleanKey = (apiKey || '').trim();
-    if (!cleanKey) return [];
-    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cleanKey)}`;
-    const resp = await fetch(url);
-    if (!resp.ok) {
-        throw new Error('HTTP ' + resp.status);
-    }
-    const data = await resp.json();
-    const list = Array.isArray(data.models) ? data.models : [];
-    return list
-        .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
-        .map((m) => (m.name || '').replace(/^models\//i, ''))
-        .filter(Boolean);
-}
-
-function ensureSv2ModelPickerModal() {
-    if (_sv2ModelPickerOverlay) return _sv2ModelPickerOverlay;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'sv2-model-picker-overlay';
-    overlay.style.cssText = [
-        'position:fixed',
-        'inset:0',
-        'background:rgba(0,0,0,0.85)',
-        'display:none',
-        'align-items:center',
-        'justify-content:center',
-        'z-index:100001',
-        'padding:14px',
-        'box-sizing:border-box'
-    ].join(';');
-
-    overlay.innerHTML = `
-        <div style="width:100%; max-width:460px; max-height:90vh; overflow-y:auto; background:#1a2228; border:2px solid #4fc3f7; border-radius:14px; padding:16px; color:#fff; box-sizing:border-box; font-family:system-ui, sans-serif;">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; border-bottom:1px solid #2e3d48; padding-bottom:10px;">
-                <strong style="color:#81d4fa; font-size:17px;">🤖 Seleziona Modello Gemini</strong>
-                <button type="button" id="sv2-model-picker-close" style="padding:6px 12px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer; font-size:14px;">✕ Chiudi</button>
-            </div>
-
-            <div id="sv2-model-active-banner" style="background:#102a1c; border:1px solid #4caf50; border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:14px; color:#c8e6c9; line-height:1.4;"></div>
-
-            <div id="sv2-model-feedback-box" style="display:none; background:#143347; border:1px solid #4fc3f7; border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:14px; color:#e1f5fe; font-weight:bold; line-height:1.4;"></div>
-
-            <div id="sv2-model-buttons-list" style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:12px;"></div>
-
-            <div style="font-size:12px; color:#b0bec5; line-height:1.35;">
-                Tocca un pulsante qui sopra per impostarlo subito in memoria. Quando un modello è attivo diventa verde con spunta ✅.
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-    _sv2ModelPickerOverlay = overlay;
-
-    const closeBtn = document.getElementById('sv2-model-picker-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            overlay.style.display = 'none';
-        });
-    }
-
-    return overlay;
-}
-
-function renderModelPickerButtons2(modelsList, feedbackMessage) {
-    const overlay = ensureSv2ModelPickerModal();
-    const banner = document.getElementById('sv2-model-active-banner');
-    const feedbackBox = document.getElementById('sv2-model-feedback-box');
-    const listBox = document.getElementById('sv2-model-buttons-list');
-    const current = getGeminiConfig2();
-    const activeModel = (current.model || MACRO_MODEL_PRESET).trim();
-
-    if (banner) {
-        banner.innerHTML = `Modello attualmente in uso nell'app: <strong>${activeModel}</strong>`;
-    }
-
-    if (feedbackBox) {
-        if (feedbackMessage) {
-            feedbackBox.style.display = 'block';
-            feedbackBox.innerText = feedbackMessage;
-        } else {
-            feedbackBox.style.display = 'none';
-            feedbackBox.innerText = '';
+        function toggleCourseUpMode2() {
+            courseUpEnabled2 = !courseUpEnabled2;
+            updateCourseUpButton2();
+            applyMapHeadingRotation2(lastHeadingDeg2);
         }
-    }
 
-    if (!listBox) return;
-    listBox.innerHTML = '';
+        function resetMapNorthUp2() {
+            courseUpEnabled2 = false;
+            lastHeadingDeg2 = 0;
+            updateCourseUpButton2();
+            applyMapHeadingRotation2(0);
+        }
 
-    modelsList.forEach((modelName) => {
-        const isSelected = activeModel === modelName;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.style.cssText = [
-            'width:100%',
-            'padding:13px 14px',
-            'border-radius:10px',
-            'font-size:15px',
-            'font-weight:bold',
-            'text-align:left',
-            'cursor:pointer',
-            'display:flex',
-            'justify-content:space-between',
-            'align-items:center',
-            'box-sizing:border-box',
-            isSelected
-                ? 'background:#2e7d32; color:#ffffff; border:2px solid #a5d6a7;'
-                : 'background:#263238; color:#eceff1; border:1px solid #546e7a;'
-        ].join(';');
+        function computeBearingDeg2(fromPos, toPos) {
+            if (!fromPos || !toPos) return null;
+            const dist = distanceMeters2(fromPos, toPos);
+            if (!Number.isFinite(dist) || dist < 2) return null;
+            const toRad = (v) => (v * Math.PI) / 180;
+            const toDeg = (v) => (v * 180) / Math.PI;
+            const lat1 = toRad(fromPos.lat);
+            const lat2 = toRad(toPos.lat);
+            const dLon = toRad(toPos.lon - fromPos.lon);
+            const y = Math.sin(dLon) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+            return (toDeg(Math.atan2(y, x)) + 360) % 360;
+        }
 
-        btn.innerHTML = `
-            <span>${modelName}</span>
-            <span>${isSelected ? '✅ ATTIVO' : 'Tocca per usare'}</span>
-        `;
+        function isAssistantVoiceEnabled2() {
+            const saved = localStorage.getItem(VOICE_PREF_KEY2);
+            return saved === null ? true : saved === 'true';
+        }
 
-        btn.addEventListener('click', () => {
-            saveGeminiConfig2(current.apiKey, modelName);
-            renderModelPickerButtons2(
-                modelsList,
-                `✔ Selezione ricevuta e salvata: ora il modello attivo è "${modelName}".`
+        function updateVoiceToggleButton2() {
+            const btn = document.getElementById('btn-voice-toggle2');
+            if (!btn) return;
+            const enabled = isAssistantVoiceEnabled2();
+            btn.innerText = enabled ? '🔊 Voce: ON' : '🔇 Voce: OFF';
+            btn.style.background = enabled ? '#2e7d32' : '#c62828';
+        }
+
+        function stopAssistantSpeech2() {
+            try {
+                if (typeof window.speechSynthesis !== 'undefined') {
+                    window.speechSynthesis.cancel();
+                }
+            } catch (e) {}
+        }
+
+        function toggleAssistantVoice2() {
+            const nextState = !isAssistantVoiceEnabled2();
+            localStorage.setItem(VOICE_PREF_KEY2, nextState ? 'true' : 'false');
+            updateVoiceToggleButton2();
+            if (!nextState) {
+                stopAssistantSpeech2();
+                const replyBox = document.getElementById('assistant-reply-box');
+                if (replyBox) {
+                    replyBox.innerText = 'Voce disattivata (OFF): l’assistente non riprodurrà alcun audio.';
+                }
+            }
+        }
+
+        function speakAssistantReply2(text) {
+            if (!isAssistantVoiceEnabled2()) {
+                stopAssistantSpeech2();
+                return;
+            }
+            try {
+                if (typeof window.speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined') {
+                    window.speechSynthesis.cancel();
+                    const utter = new SpeechSynthesisUtterance(text);
+                    utter.lang = 'it-IT';
+                    window.speechSynthesis.speak(utter);
+                }
+            } catch (e) {}
+        }
+
+        function setGpsUiState2(active, labelText) {
+            const dot = document.getElementById('gps-status-dot');
+            const txt = document.getElementById('gps-status-text');
+            if (dot) {
+                dot.classList.remove('gps-active', 'gps-waiting');
+                dot.classList.add(active ? 'gps-active' : 'gps-waiting');
+            }
+            if (txt && labelText) {
+                txt.innerText = labelText;
+            }
+        }
+
+        function ensureMapReady2() {
+            const mapEl = document.getElementById('map2');
+            if (!mapEl || typeof L === 'undefined') return null;
+
+            if (typeof initSentieroMap === 'function' && !fallbackMap2) {
+                try {
+                    initSentieroMap('map2');
+                } catch (e) {}
+            }
+
+            if (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.setView === 'function') {
+                setTimeout(() => {
+                    try {
+                        sentieroMap.invalidateSize();
+                        applyMapHeadingRotation2(lastHeadingDeg2);
+                    } catch (e) {}
+                }, 150);
+                return sentieroMap;
+            }
+
+            if (!fallbackMap2) {
+                const startLat = currentGpsCoords2 ? currentGpsCoords2.lat : 43.5485;
+                const startLon = currentGpsCoords2 ? currentGpsCoords2.lon : 10.4225;
+                fallbackMap2 = L.map('map2', { preferCanvas: true }).setView([startLat, startLon], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(fallbackMap2);
+            }
+
+            setTimeout(() => {
+                try {
+                    fallbackMap2.invalidateSize();
+                    applyMapHeadingRotation2(lastHeadingDeg2);
+                } catch (e) {}
+            }, 150);
+            return fallbackMap2;
+        }
+
+        function distanceMeters2(a, b) {
+            if (!a || !b) return Infinity;
+            const toRad = (v) => (v * Math.PI) / 180;
+            const R = 6371000;
+            const dLat = toRad(b.lat - a.lat);
+            const dLon = toRad(b.lon - a.lon);
+            const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
+            return 2 * R * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+        }
+
+        function updateMapWithPosition2(lat, lon, gpsHeading) {
+            const nextPos = { lat: Number(lat), lon: Number(lon) };
+            const prevPos = currentGpsCoords2;
+            currentGpsCoords2 = nextPos;
+            setGpsUiState2(true, `GPS attivo (${nextPos.lat.toFixed(4)}, ${nextPos.lon.toFixed(4)})`);
+
+            const computedBearing = computeBearingDeg2(prevPos, nextPos);
+            if (typeof gpsHeading === 'number' && !Number.isNaN(gpsHeading) && gpsHeading >= 0) {
+                lastHeadingDeg2 = gpsHeading;
+            } else if (computedBearing !== null) {
+                lastHeadingDeg2 = computedBearing;
+            }
+
+            const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.setView === 'function')
+                ? sentieroMap
+                : fallbackMap2;
+
+            if (activeMap) {
+                try {
+                    const moved = distanceMeters2(lastCenteredCoords2, nextPos);
+                    if (!lastCenteredCoords2 || moved >= 2) {
+                        const zoomLvl = activeMap.getZoom ? Math.max(activeMap.getZoom(), 15) : 15;
+                        activeMap.setView([nextPos.lat, nextPos.lon], zoomLvl, { animate: false });
+                        lastCenteredCoords2 = nextPos;
+                    }
+                    if (!fallbackUserMarker2) {
+                        fallbackUserMarker2 = L.marker([nextPos.lat, nextPos.lon], {
+                            icon: createPulsingUserIcon2(),
+                            interactive: false
+                        }).addTo(activeMap);
+                    } else {
+                        fallbackUserMarker2.setLatLng([nextPos.lat, nextPos.lon]);
+                    }
+                    applyMapHeadingRotation2(lastHeadingDeg2);
+                } catch (e) {}
+            }
+
+            if (typeof recordTrack2Point === 'function') {
+                try { recordTrack2Point(nextPos.lat, nextPos.lon); } catch (e) {}
+            }
+        }
+
+        function handleGpsError2(err) {
+            if (!err) {
+                setGpsUiState2(false, 'GPS in attesa segnale... (tocca)');
+                return;
+            }
+            if (err.code === 1) {
+                setGpsUiState2(false, 'Posizione bloccata dal browser');
+            } else if (err.code === 2) {
+                setGpsUiState2(false, 'Segnale GPS non disponibile (tocca)');
+            } else if (err.code === 3) {
+                setGpsUiState2(false, 'Tempo attesa GPS scaduto (tocca)');
+            } else {
+                setGpsUiState2(false, 'GPS in attesa... (tocca per riprovare)');
+            }
+        }
+
+        function startGpsTrackingNow2() {
+            setGpsUiState2(false, 'GPS in ricerca...');
+            if (!navigator.geolocation) {
+                setGpsUiState2(false, 'GPS non supportato');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude, pos.coords.heading),
+                (err) => handleGpsError2(err),
+                { enableHighAccuracy: false, maximumAge: 30000, timeout: 6000 }
             );
-        });
 
-        listBox.appendChild(btn);
-    });
-
-    overlay.style.display = 'flex';
-}
-
-async function mostraModelliGeminiDisponibili2() {
-    const ok = await askAdminPassword2("Inserisci la password per vedere e selezionare il modello");
-    if (!ok) return;
-
-    const current = getGeminiConfig2();
-    let liveModels = [];
-
-    if (current.apiKey) {
-        try {
-            liveModels = await fetchLiveGeminiModels2(current.apiKey);
-        } catch (err) {
-            liveModels = [];
+            if (gpsWatchId2 !== null) {
+                navigator.geolocation.clearWatch(gpsWatchId2);
+            }
+            gpsWatchId2 = navigator.geolocation.watchPosition(
+                (pos) => updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude, pos.coords.heading),
+                (err) => handleGpsError2(err),
+                { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+            );
         }
-    }
 
-    const merged = Array.from(new Set([...liveModels, ...GEMINI_KNOWN_MODELS]));
-    renderModelPickerButtons2(
-        merged,
-        `Modello attivo al momento: "${current.model || MACRO_MODEL_PRESET}". Tocca un modello per attivarlo.`
-    );
-}
+        function commitAudioWaypointText2(rawText) {
+            const clean = (rawText || '').trim();
+            if (!clean) {
+                alert("Nessun testo vocale o nota rilevato: il waypoint non è stato salvato.");
+                return false;
+            }
+            if (typeof addAudioWaypoint2 === 'function') {
+                const idx = addAudioWaypoint2(clean);
+                const noteInp = document.getElementById('wp2-note-input');
+                if (noteInp) noteInp.value = '';
+                alert("Waypoint vocale #" + idx + " salvato:\n\"" + clean + "\"");
+                return true;
+            }
+            alert("Funzione waypoint vocale non disponibile.");
+            return false;
+        }
+
+        function handleAudioWp2() {
+            if (typeof track2Active !== 'undefined' && !track2Active) {
+                alert("Avvia prima la registrazione del percorso.");
+                return;
+            }
+
+            const existingNote = (document.getElementById('wp2-note-input')?.value || '').trim();
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRec) {
+                const typed = prompt("Dettatura non supportata dal browser. Scrivi la nota del waypoint:", existingNote);
+                if (typed !== null) commitAudioWaypointText2(typed);
+                return;
+            }
+
+            stopAssistantSpeech2();
+            const rec = new SpeechRec();
+            rec.lang = 'it-IT';
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+
+            let gotResult = false;
+            rec.onresult = function(event) {
+                gotResult = true;
+                const spoken = event.results?.[0]?.[0]?.transcript || '';
+                const noteInp = document.getElementById('wp2-note-input');
+                if (noteInp && spoken) noteInp.value = spoken;
+                commitAudioWaypointText2(spoken);
+            };
+
+            rec.onerror = function() {
+                if (gotResult) return;
+                const manual = prompt("Microfono non disponibile o interrotto. Scrivi la nota del waypoint:", existingNote);
+                if (manual !== null) commitAudioWaypointText2(manual);
+            };
+
+            rec.onend = function() {
+                if (!gotResult) {
+                    const currentVal = (document.getElementById('wp2-note-input')?.value || '').trim();
+                    if (currentVal) {
+                        commitAudioWaypointText2(currentVal);
+                    }
+                }
+            };
+
+            try {
+                rec.start();
+            } catch (e) {
+                const manual = prompt("Impossibile avviare il microfono. Scrivi la nota del waypoint:", existingNote);
+                if (manual !== null) commitAudioWaypointText2(manual);
+            }
+        }
+
+        function refreshAssistantSummary2() {
+            const summary = document.getElementById('assistant-status-summary');
+            if (!summary) return;
+            const statoTxt = document.getElementById('track2-status-label')?.innerText || 'Pronto';
+            const punti = typeof track2Coordinates !== 'undefined' ? track2Coordinates.length : 0;
+            const wpCount = typeof waypoint2List !== 'undefined' ? waypoint2List.length : 0;
+            const gpsStato = currentGpsCoords2 ? 'Attivo' : 'In attesa';
+            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { model: 'gemini-2.5-flash-lite' };
+            const modelloAttivo = cfg.model || 'gemini-2.5-flash-lite';
+            summary.innerHTML = `
+                <div><strong>Modello impostato:</strong> ${modelloAttivo}</div>
+                <div><strong>GPS:</strong> ${gpsStato}</div>
+                <div><strong>Stato:</strong> ${statoTxt}</div>
+                <div><strong>Punti registrati:</strong> ${punti}</div>
+                <div><strong>Waypoint:</strong> ${wpCount}</div>
+            `;
+        }
+
+        function handleAssistantInfo2() {
+            const panel = document.getElementById('sv2-assistant-panel');
+            if (!panel) return;
+            updateVoiceToggleButton2();
+            refreshAssistantSummary2();
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function closeAssistantInfo2() {
+            const panel = document.getElementById('sv2-assistant-panel');
+            if (panel) panel.style.display = 'none';
+            stopAssistantSpeech2();
+        }
+
+        function sanitizeGeminiModel2(rawModel) {
+            const m = (rawModel || '').trim().replace(/^models\//i, '').replace(/\s+/g, '');
+            return m || 'gemini-2.5-flash-lite';
+        }
+
+        async function postGeminiForModel2(modelName, apiKey, promptText) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 15000);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `Sei l'assistente escursionistico di SentieroVivo 2.0. Rispondi in italiano in modo breve, chiaro e utile (massimo 3 frasi): ${promptText}`
+                            }]
+                        }]
+                    })
+                });
+                clearTimeout(timer);
+
+                if (!response.ok) {
+                    let detail = '';
+                    try {
+                        const errJson = await response.json();
+                        detail = errJson?.error?.message || '';
+                    } catch (e) {}
+                    return { text: null, reason: 'http_error', status: response.status, detail, modelUsed: modelName };
+                }
+
+                const data = await response.json();
+                const textResult = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (textResult && textResult.trim()) {
+                    return { text: textResult.trim(), reason: 'ok', modelUsed: modelName };
+                }
+                return { text: null, reason: 'empty', modelUsed: modelName };
+            } catch (err) {
+                clearTimeout(timer);
+                if (err && err.name === 'AbortError') {
+                    return { text: null, reason: 'timeout', modelUsed: modelName };
+                }
+                return { text: null, reason: 'network_error', modelUsed: modelName };
+            }
+        }
+
+        async function callGeminiApi2(promptText) {
+            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash-lite' };
+            const apiKey = (cfg.apiKey || '').trim();
+            if (!apiKey) return { text: null, reason: 'no_key' };
+
+            const primaryModel = sanitizeGeminiModel2(cfg.model);
+            return await postGeminiForModel2(primaryModel, apiKey, promptText);
+        }
+
+        async function processAssistantQuestion2(question) {
+            const q = (question || '').trim();
+            const qLower = q.toLowerCase();
+            const replyBox = document.getElementById('assistant-reply-box');
+            if (!q || !replyBox) return;
+
+            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { model: 'gemini-2.5-flash-lite' };
+            const modelloAttivo = sanitizeGeminiModel2(cfg.model);
+
+            replyBox.innerHTML = `<span style="color:#ffd54f;">⏳ Elaborazione risposta con ${modelloAttivo}...</span>`;
+
+            const statoTxt = document.getElementById('track2-status-label')?.innerText || 'Pronto';
+            const punti = typeof track2Coordinates !== 'undefined' ? track2Coordinates.length : 0;
+            const wpCount = typeof waypoint2List !== 'undefined' ? waypoint2List.length : 0;
+            const gpsStato = currentGpsCoords2 ? 'attivo' : 'in attesa';
+
+            let answer = null;
+            let sourceLabel = `Locale (${modelloAttivo} impostato)`;
+
+            if (qLower.includes('che modello') || qLower.includes('quale modello') || qLower.includes('modello attivo')) {
+                answer = `Il modello attualmente impostato nell'app è ${modelloAttivo}.`;
+            } else if (qLower.includes('che ore sono') || qLower.includes('che ora è') || qLower.includes('che ora e') || qLower.includes("l'ora") || /\bora\b/.test(qLower)) {
+                const adesso = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                answer = `Sono le ${adesso}.`;
+            } else if ((qLower.includes('meteo') || qLower.includes('tempo') || qLower.includes('pioggia')) && !qLower.includes('domani') && !qLower.includes('prevision')) {
+                const center = getPoiSearchCenter2();
+                try {
+                    const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lon}&current=temperature_2m,precipitation,wind_speed_10m&timezone=auto`);
+                    const data = await resp.json();
+                    if (data && data.current) {
+                        answer = `Nella tua posizione ci sono ${data.current.temperature_2m} gradi, precipitazioni ${data.current.precipitation} millimetri e vento a ${data.current.wind_speed_10m} chilometri orari.`;
+                    }
+                } catch (e) {}
+            } else if (qLower.includes('waypoint') || qLower.includes('bandierin')) {
+                answer = `Hai salvato ${wpCount} waypoint sul percorso corrente.`;
+            } else if (qLower.includes('punti') || qLower.includes('traccia') || qLower.includes('registr')) {
+                answer = `Sono registrati ${punti} punti. Stato attuale: ${statoTxt}.`;
+            } else if (qLower.includes('gps') || qLower.includes('posizione')) {
+                answer = `Il segnale GPS è ${gpsStato}.`;
+            }
+
+            if (!answer) {
+                const resGemini = await callGeminiApi2(q);
+                if (resGemini && resGemini.text) {
+                    answer = resGemini.text;
+                    sourceLabel = `Gemini API (${resGemini.modelUsed || modelloAttivo})`;
+                } else if (resGemini && resGemini.reason === 'no_key') {
+                    answer = `Per domande generali o previsioni per altre città serve inserire la chiave API Gemini nel Menu.`;
+                } else if (resGemini && resGemini.reason === 'timeout') {
+                    answer = `Gemini (${modelloAttivo}) ha impiegato troppo tempo a rispondere. Riprova tra qualche istante.`;
+                } else if (resGemini && resGemini.reason === 'http_error') {
+                    const extra = resGemini.detail ? ` (${resGemini.detail})` : '';
+                    answer = `Errore Gemini ${resGemini.status} su ${resGemini.modelUsed || modelloAttivo}${extra}.`;
+                } else {
+                    answer = `Non sono riuscito a collegarmi a Gemini (${modelloAttivo}). Verifica la connessione internet e la chiave API.`;
+                }
+            }
+
+            replyBox.innerHTML = `
+                <div>${answer}</div>
+                <div style="margin-top:8px; padding-top:6px; border-top:1px solid #2c435e; font-size:12px; color:#80cbc4;">
+                    <strong>Risposta da:</strong> ${sourceLabel}
+                </div>
+            `;
+            speakAssistantReply2(answer);
+        }
+
+        function askAssistantText2() {
+            const inp = document.getElementById('assistant-text-input');
+            if (!inp) return;
+            const txt = inp.value.trim();
+            if (!txt) return;
+            processAssistantQuestion2(txt);
+        }
+
+        function startAssistantVoiceQuery2() {
+            const replyBox = document.getElementById('assistant-reply-box');
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRec) {
+                if (replyBox) {
+                    replyBox.innerText = 'Riconoscimento vocale non supportato da questo browser: scrivi la domanda e premi Chiedi.';
+                }
+                return;
+            }
+            stopAssistantSpeech2();
+            const rec = new SpeechRec();
+            rec.lang = 'it-IT';
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+
+            if (replyBox) {
+                replyBox.innerText = '🎤 Sto ascoltando... parla e poi premi Chiedi se vuoi inviare.';
+            }
+
+            rec.onresult = (event) => {
+                const spoken = (event.results?.[0]?.[0]?.transcript || '').trim();
+                const inp = document.getElementById('assistant-text-input');
+                if (inp) inp.value = spoken;
+                if (replyBox) {
+                    replyBox.innerText = spoken
+                        ? `Testo trascritto: "${spoken}". Tocca Chiedi per inviare.`
+                        : 'Nessun testo rilevato.';
+                }
+            };
+
+            rec.onerror = () => {
+                if (replyBox) {
+                    replyBox.innerText = 'Microfono non disponibile o interrotto. Scrivi la domanda nella casella e premi Chiedi.';
+                }
+            };
+
+            rec.start();
+        }
+
+        function showLicenseInputBox2(customMsg) {
+            const menuEl = document.getElementById('sentiero2-menu-drawer');
+            if (menuEl) menuEl.style.display = 'none';
+            const panel = document.getElementById('license-panel');
+            const statusText = document.getElementById('license-status-text');
+            const inputEl = document.getElementById('license-code-input');
+            if (statusText && customMsg) {
+                statusText.innerText = customMsg;
+            }
+            if (panel) {
+                panel.style.display = 'block';
+                panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (inputEl) {
+                setTimeout(() => inputEl.focus(), 120);
+            }
+        }
+
+        function unlockAndShowLicenseBox2() {
+            if (typeof apriGestioneLicenzaDaMenu2 === 'function') {
+                try {
+                    apriGestioneLicenzaDaMenu2();
+                } catch (e) {}
+            }
+            showLicenseInputBox2("Inserisci il codice di licenza e tocca Attiva Licenza.");
+        }
+
+        function refreshLicenseUi() {
+            if (typeof renderWelcomeScreen === 'function') renderWelcomeScreen('welcome-box');
+            if (typeof initTrialAndLicense !== 'function') return;
+            const state = initTrialAndLicense();
+            const panel = document.getElementById('license-panel');
+            const statusText = document.getElementById('license-status-text');
+            if (!panel || !statusText) return;
+
+            if (state.status === 'expired') {
+                panel.style.display = 'block';
+                statusText.innerText = "I 30 giorni di prova sono terminati. Inserisci il codice di attivazione.";
+            } else if (state.status === 'tampered') {
+                panel.style.display = 'block';
+                statusText.innerText = "Rilevata un'anomalia nella data del dispositivo. Inserisci il codice di attivazione.";
+            } else if (panel.style.display !== 'block') {
+                panel.style.display = 'none';
+            }
+        }
+
+        function toggleSosPanel2() {
+            const el = document.getElementById('sos-setup-panel');
+            if (!el) return;
+            el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
+        }
+
+        function toggleMenuDrawer2() {
+            const el = document.getElementById('sentiero2-menu-drawer');
+            if (!el) return;
+            const isHidden = (el.style.display === 'none' || !el.style.display);
+            el.style.display = isHidden ? 'block' : 'none';
+            if (isHidden) {
+                el.scrollTop = 0;
+            } else {
+                ensureMapReady2();
+            }
+        }
+
+        function openPoiMenu2() {
+            const menuEl = document.getElementById('sentiero2-menu-drawer');
+            const poiEl = document.getElementById('sentiero2-poi-modal');
+            if (menuEl) menuEl.style.display = 'none';
+            if (poiEl) {
+                poiEl.style.display = 'block';
+                poiEl.scrollTop = 0;
+            }
+        }
+
+        function closePoiMenu2() {
+            const poiEl = document.getElementById('sentiero2-poi-modal');
+            const menuEl = document.getElementById('sentiero2-menu-drawer');
+            if (poiEl) poiEl.style.display = 'none';
+            if (menuEl) menuEl.style.display = 'block';
+        }
+
+        function getPoiSearchCenter2() {
+            if (currentGpsCoords2 && typeof currentGpsCoords2.lat === 'number' && typeof currentGpsCoords2.lon === 'number') {
+                return currentGpsCoords2;
+            }
+            if (typeof track2Coordinates !== 'undefined' && Array.isArray(track2Coordinates) && track2Coordinates.length > 0) {
+                const last = track2Coordinates[track2Coordinates.length - 1];
+                if (Array.isArray(last) && last.length >= 2) return { lat: Number(last[0]), lon: Number(last[1]) };
+            }
+            const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.getCenter === 'function')
+                ? sentieroMap
+                : fallbackMap2;
+            if (activeMap && typeof activeMap.getCenter === 'function') {
+                const c = activeMap.getCenter();
+                return { lat: c.lat, lon: c.lng };
+            }
+            return { lat: 43.5485, lon: 10.4225 };
+        }
+
+        function buildPoiOverpassFilter2(category, lat, lon, radius) {
+            const around = `(around:${radius},${lat},${lon})`;
+            switch (category) {
+                case 'STRADE IN MONTAGNA':
+                    return `(way["highway"~"track|unclassified"]["surface"~"unpaved|ground|dirt|gravel"]${around};way["tracktype"]${around};)`;
+                case 'SENTIERI NELLE VICINANZE':
+                    return `(way["route"="hiking"]${around};relation["route"="hiking"]${around};way["highway"="path"]${around};)`;
+                case 'RIFUGI CAI E NON':
+                    return `(node["tourism"="alpine_hut"]${around};way["tourism"="alpine_hut"]${around};node["tourism"="wilderness_hut"]${around};way["tourism"="wilderness_hut"]${around};)`;
+                case 'RISTORANTI':
+                    return `(node["amenity"="restaurant"]${around};way["amenity"="restaurant"]${around};)`;
+                case 'PIZZERIE':
+                    return `(node["amenity"="restaurant"]["cuisine"~"pizza",i]${around};way["amenity"="restaurant"]["cuisine"~"pizza",i]${around};node["amenity"="fast_food"]["cuisine"~"pizza",i]${around};)`;
+                case 'BAR & PUB':
+                    return `(node["amenity"~"bar|pub|cafe"]${around};way["amenity"~"bar|pub|cafe"]${around};)`;
+                case 'HOTEL':
+                    return `(node["tourism"="hotel"]${around};way["tourism"="hotel"]${around};)`;
+                case 'MOTEL':
+                    return `(node["tourism"="motel"]${around};way["tourism"="motel"]${around};)`;
+                case 'PENSIONI':
+                    return `(node["tourism"="guest_house"]${around};way["tourism"="guest_house"]${around};)`;
+                case 'B & B':
+                    return `(node["tourism"~"bed_and_breakfast|guest_house"]${around};way["tourism"~"bed_and_breakfast|guest_house"]${around};)`;
+                case 'DISTRIBUTORI BENZINA':
+                    return `(node["amenity"="fuel"]${around};way["amenity"="fuel"]${around};)`;
+                case 'FARMACIE':
+                    return `(node["amenity"="pharmacy"]${around};way["amenity"="pharmacy"]${around};)`;
+                case 'GOMMISTI':
+                    return `(node["shop"="tyres"]${around};way["shop"="tyres"]${around};node["craft"="tyres"]${around};)`;
+                case 'PUNTI DI INFORMAZIONI':
+                    return `(node["information"]${around};way["information"]${around};node["tourism"="information"]${around};)`;
+                default:
+                    return `(node${around};way${around};)`;
+            }
+        }
+
+        async function queryOverpassWithFallback2(query) {
+            const endpoints = [
+                'https://overpass-api.de/api/interpreter',
+                'https://overpass.kumi.systems/api/interpreter'
+            ];
+            let lastErr = null;
+            for (const url of endpoints) {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 8000);
+                try {
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        signal: controller.signal,
+                        body: 'data=' + encodeURIComponent(query)
+                    });
+                    clearTimeout(timer);
+                    if (!resp.ok) {
+                        lastErr = new Error('HTTP ' + resp.status);
+                        continue;
+                    }
+                    return await resp.json();
+                } catch (e) {
+                    clearTimeout(timer);
+                    lastErr = e;
+                }
+            }
+            throw lastErr || new Error('Servizio ricerca non disponibile');
+        }
+
+        async function searchPoiCategory2(category) {
+            const box = document.getElementById('poi-results-box');
+            const poiModal = document.getElementById('sentiero2-poi-modal');
+            if (!box) return;
+
+            box.innerHTML = `<div style="color:#ffd54f; font-weight:bold;">⏳ Ricerca in corso per "${category}" (max 8 secondi per server)...</div>`;
+            if (poiModal) poiModal.scrollTop = 0;
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            const center = getPoiSearchCenter2();
+            const radius = 5000;
+            const filter = buildPoiOverpassFilter2(category, center.lat, center.lon, radius);
+            const query = `[out:json][timeout:7];${filter}out center 25;`;
+
+            try {
+                const data = await queryOverpassWithFallback2(query);
+                const elements = Array.isArray(data.elements) ? data.elements : [];
+
+                const items = elements.map((el) => {
+                    const tags = el.tags || {};
+                    let name = tags.name || tags['ref'] || tags['operator'];
+                    if (!name) {
+                        if (category === 'STRADE IN MONTAGNA') name = 'Strada sterrata di montagna';
+                        else if (category === 'SENTIERI NELLE VICINANZE') name = 'Sentiero escursionistico';
+                        else name = 'Punto senza nome specifico';
+                    }
+                    const street = tags['addr:street'] || '';
+                    const houseNumber = tags['addr:housenumber'] || '';
+                    const city = tags['addr:city'] || tags['addr:town'] || tags['addr:village'] || '';
+                    const address = [street, houseNumber, city].filter(Boolean).join(', ') || tags['addr:full'] || 'Indirizzo non presente nei dati mappa';
+                    const phone = tags.phone || tags['contact:phone'] || tags['phone:mobile'] || 'Telefono non disponibile';
+                    return { name, address, phone };
+                });
+
+                const uniqueItems = [];
+                const seen = new Set();
+                for (const it of items) {
+                    const key = `${it.name}|${it.address}|${it.phone}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        uniqueItems.push(it);
+                    }
+                }
+
+                if (!uniqueItems.length) {
+                    box.innerHTML = `<div style="color:#ffcc80;">Nessun risultato trovato entro 5 km per <strong>${category}</strong>.</div>`;
+                    return;
+                }
+
+                box.innerHTML = `
+                    <div style="font-weight:bold; color:#a5d6a7; margin-bottom:12px; font-size:16px;">📍 ${category} (${uniqueItems.length} trovati nei dintorni)</div>
+                    ${uniqueItems.map((p) => `
+                        <div style="background:#262d2a; border:1px solid #3f534b; border-radius:10px; padding:12px; margin-bottom:10px;">
+                            <div style="font-size:16px; font-weight:bold; color:#ffffff; margin-bottom:5px;">• ${p.name}</div>
+                            <div style="font-size:14px; color:#cfd8dc; margin-bottom:4px;">📍 <strong>Indirizzo:</strong> ${p.address}</div>
+                            <div style="font-size:14px; color:#80cbc4;">📞 <strong>Telefono:</strong> ${p.phone}</div>
+                        </div>
+                    `).join('')}
+                `;
+                if (poiModal) poiModal.scrollTop = 0;
+            } catch (err) {
+                box.innerHTML = `<div style="color:#ef9a9a; line-height:1.45;">Il server mappe non ha risposto in tempo per <strong>${category}</strong>. Tocca di nuovo la categoria tra qualche secondo per riprovare.</div>`;
+            }
+        }
+
+        async function fetchMeteo24Ore2() {
+            const box = document.getElementById('meteo-results-box');
+            if (!box) return;
+            box.style.display = 'block';
+            box.innerHTML = `<div style="color:#ffd54f; font-weight:bold;">⏳ Caricamento meteo 24 ore in corso...</div>`;
+
+            const center = getPoiSearchCenter2();
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lon}&hourly=temperature_2m,precipitation,wind_speed_10m&timezone=auto`;
+
+            try {
+                const resp = await fetch(url);
+                const data = await resp.json();
+                if (!data || !data.hourly) {
+                    box.innerHTML = `<div style="color:#ef9a9a;">Dati meteo non disponibili al momento.</div>`;
+                    return;
+                }
+
+                const times = data.hourly.time || [];
+                const temps = data.hourly.temperature_2m || [];
+                const precs = data.hourly.precipitation || [];
+                const winds = data.hourly.wind_speed_10m || [];
+
+                let html = `<div style="font-weight:bold; color:#90caf9; margin-bottom:10px; font-size:16px;">🌦️ Previsioni Meteo prossime 24 Ore</div>`;
+                html += `<div style="max-height:280px; overflow-y:auto; display:grid; gap:6px;">`;
+
+                for (let i = 0; i < Math.min(24, times.length); i++) {
+                    const hora = times[i].split('T')[1] || times[i];
+                    html += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#243342; padding:8px 10px; border-radius:6px; font-size:13px;">
+                            <span style="font-weight:bold; color:#fff; min-width:50px;">Ore ${hora}</span>
+                            <span style="color:#ffe082;">🌡️ ${temps[i]}°C</span>
+                            <span style="color:#81d4fa;">🌧️ ${precs[i]} mm</span>
+                            <span style="color:#b2dfdb;">💨 ${winds[i]} km/h</span>
+                        </div>
+                    `;
+                }
+                html += `</div>`;
+                box.innerHTML = html;
+            } catch (err) {
+                box.innerHTML = `<div style="color:#ef9a9a;">Servizio meteo momentaneamente non raggiungibile. Riprova tra qualche secondo.</div>`;
+            }
+        }
+
+        function openSaveTrackModal2() {
+            const el = document.getElementById('sentiero2-save-modal');
+            if (el) {
+                refreshFolderSelect2();
+                el.style.display = 'block';
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function closeSaveTrackModal2() {
+            const el = document.getElementById('sentiero2-save-modal');
+            if (el) el.style.display = 'none';
+        }
+
+        function refreshFolderSelect2() {
+            const sel = document.getElementById('save2-folder-select');
+            if (!sel || typeof getKnownFolders2 !== 'function') return;
+            const folders = getKnownFolders2();
+            sel.innerHTML = folders.map((f) => `<option value="${f}">${f}</option>`).join('');
+        }
+
+        function renderSavedTracks2Ui() {
+            const box = document.getElementById('saved-tracks2-list');
+            if (!box || typeof loadSavedTracks2 !== 'function') return;
+            const tracks = loadSavedTracks2();
+            if (!tracks.length) {
+                box.innerHTML = "Nessun percorso salvato al momento.";
+                return;
+            }
+            box.innerHTML = tracks.map((t) => `
+                <div style="background:#2a2a2a; padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid #444;">
+                    <div style="font-weight:bold; color:#fff;">📁 ${t.name}</div>
+                    <div style="font-size:12px; color:#bbb; margin:4px 0;">Cartella: ${t.folder || 'Trekking'} • ${t.date} • Bandierine: ${(t.waypoints || []).length}</div>
+                    <div style="display:flex; gap:8px; margin-top:6px;">
+                        <button onclick="handleOpenTrack2(${t.id})" style="flex:1; padding:7px; border:none; border-radius:6px; background:#2e7d32; color:#fff; font-weight:bold; cursor:pointer;">Apri su Mappa</button>
+                        <button onclick="handleDeleteTrack2(${t.id})" style="padding:7px 12px; border:none; border-radius:6px; background:#b71c1c; color:#fff; font-weight:bold; cursor:pointer;">Elimina</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleOpenTrack2(id) {
+            if (typeof openSavedTrack2OnMap === 'function' && openSavedTrack2OnMap(id)) {
+                document.getElementById('sentiero2-archivio-modal').style.display = 'none';
+                document.getElementById('track2-status-label').innerText = "Percorso caricato";
+            }
+        }
+
+        function handleDeleteTrack2(id) {
+            if (confirm("Eliminare questo percorso salvato?") && typeof deleteSavedTrack2 === 'function') {
+                deleteSavedTrack2(id);
+                renderSavedTracks2Ui();
+                refreshFolderSelect2();
+            }
+        }
+
+        function handleStartTrack2() {
+            const nameVal = document.getElementById('track2-name-input').value;
+            const res = typeof startTrack2 === 'function' ? startTrack2(nameVal) : { name: nameVal || 'Percorso' };
+            if (typeof addAutoWaypoint2 === 'function') addAutoWaypoint2();
+            document.getElementById('track2-status-label').innerText = "In registrazione: " + res.name;
+            document.getElementById('btn-pause-track2').innerText = "⏸️ Pausa";
+        }
+
+        function handlePauseTrack2() {
+            if (typeof togglePauseTrack2 !== 'function') return;
+            const res = togglePauseTrack2();
+            if (!res.ok) { alert(res.message); return; }
+            document.getElementById('btn-pause-track2').innerText = res.paused ? "▶️ Riprendi" : "⏸️ Pausa";
+            document.getElementById('track2-status-label').innerText = res.paused ? "In pausa" : "In registrazione";
+        }
+
+        function handleSaveTrack2() {
+            const hasActive = (typeof track2Active !== 'undefined' && track2Active);
+            const hasPts = (typeof track2Coordinates !== 'undefined' && Array.isArray(track2Coordinates) && track2Coordinates.length > 0);
+            if (!hasActive && !hasPts) {
+                alert("Nessun percorso attivo o registrato da salvare.");
+                return;
+            }
+            const nameVal = document.getElementById('track2-name-input').value || (typeof track2Name !== 'undefined' ? track2Name : 'Percorso');
+            const newFolder = document.getElementById('save2-new-folder-input').value.trim();
+            const chosenFolder = newFolder || document.getElementById('save2-folder-select').value || 'Trekking';
+
+            if (typeof saveCurrentTrack2 !== 'function') {
+                alert("Funzione di salvataggio non disponibile.");
+                return;
+            }
+
+            const res = saveCurrentTrack2(nameVal, chosenFolder);
+            if (res && res.ok) {
+                document.getElementById('save2-new-folder-input').value = '';
+                document.getElementById('track2-status-label').innerText = "Salvato";
+                document.getElementById('btn-pause-track2').innerText = "⏸️ Pausa";
+                closeSaveTrackModal2();
+                refreshFolderSelect2();
+                renderSavedTracks2Ui();
+                alert(`Percorso "${res.track.name}" salvato in "${res.track.folder}".`);
+            } else {
+                alert((res && res.message) || "Salvataggio non riuscito: controlla che ci siano punti registrati.");
+            }
+        }
+
+        function handleManualWp2() {
+            if (typeof track2Active !== 'undefined' && !track2Active) {
+                alert("Avvia prima la registrazione del percorso.");
+                return;
+            }
+            if (typeof addManualWaypoint2 === 'function') {
+                const idx = addManualWaypoint2();
+                alert("Bandierina manuale #" + idx + " inserita.");
+            }
+        }
+
+        function handlePhotoWp2(event) {
+            if (typeof track2Active !== 'undefined' && !track2Active) {
+                alert("Avvia prima la registrazione del percorso.");
+                event.target.value = "";
+                return;
+            }
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const caption = document.getElementById('wp2-note-input').value.trim();
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (typeof addPhotoWaypoint2 === 'function') {
+                    const idx = addPhotoWaypoint2(e.target.result, caption);
+                    document.getElementById('wp2-note-input').value = "";
+                    event.target.value = "";
+                    alert("Foto #" + idx + " salvata sul punto.");
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleVideoWp2(event) {
+            if (typeof track2Active !== 'undefined' && !track2Active) {
+                alert("Avvia prima la registrazione del percorso.");
+                event.target.value = "";
+                return;
+            }
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const caption = document.getElementById('wp2-note-input').value.trim();
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (typeof addVideoWaypoint2 === 'function') {
+                    const idx = addVideoWaypoint2(e.target.result, caption);
+                    document.getElementById('wp2-note-input').value = "";
+                    event.target.value = "";
+                    alert("Video #" + idx + " salvato sul punto.");
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function loadSavedInputs() {
+            if (typeof getSos2Contacts === 'function') {
+                const c = getSos2Contacts();
+                document.getElementById('sos-name-input').value = c.userName || '';
+                document.getElementById('sos-c1-input').value = c.c1 || '';
+                document.getElementById('sos-c2-input').value = c.c2 || '';
+            }
+            if (typeof isSos2Configured === 'function' && isSos2Configured()) {
+                document.getElementById('sos-feedback').innerText = "Contatti S.O.S. già configurati.";
+            }
+        }
+
+        function handleSaveSos() {
+            const name = document.getElementById('sos-name-input').value;
+            const c1 = document.getElementById('sos-c1-input').value;
+            const c2 = document.getElementById('sos-c2-input').value;
+            const res = saveSos2Contacts(name, c1, c2, '');
+            document.getElementById('sos-feedback').innerText = res.message;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof APP_BUILD_VERSION !== 'undefined') {
+                setTimeout(() => {
+                    alert("SentieroVivo 2.0 - Versione attiva: v" + APP_BUILD_VERSION);
+                }, 250);
+            }
+            updateVoiceToggleButton2();
+            updateCourseUpButton2();
+            refreshLicenseUi();
+            loadSavedInputs();
+            refreshFolderSelect2();
+            renderSavedTracks2Ui();
+            ensureMapReady2();
+            startGpsTrackingNow2();
+            setTimeout(() => {
+                if (typeof restoreTrack2DraftIfPresent === 'function') {
+                    if (restoreTrack2DraftIfPresent()) {
+                        document.getElementById('track2-status-label').innerText = "Bozza ripristinata";
+                    }
+                }
+            }, 350);
+        });
+    </script>
+</body>
+</html>
