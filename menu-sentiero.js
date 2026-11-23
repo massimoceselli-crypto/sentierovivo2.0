@@ -19,8 +19,6 @@ let _sv2PasswordModalOverlay = null;
 let _sv2PasswordResolver = null;
 let _sv2ModelPickerOverlay = null;
 
-// --- GESTIONE DEI 6 TASTI DEL MENU (v328) ---
-
 function apriCartellaPercorsi2() {
     const menuEl = document.getElementById('sentiero2-menu-drawer');
     const archEl = document.getElementById('sentiero2-archivio-modal');
@@ -95,8 +93,6 @@ function menuCreaNuovoPercorsoRientro2() {
         if (menuEl) menuEl.style.display = 'none';
     }
 }
-
-// --- PASSWORD & MODALI ---
 
 function ensureSv2PasswordModal() {
     if (_sv2PasswordModalOverlay) return _sv2PasswordModalOverlay;
@@ -231,6 +227,13 @@ function saveGeminiConfig2(apiKey, model) {
 }
 
 function getActiveBuildVersion2() {
+    const manualOverride = localStorage.getItem('sv2_manual_version_override');
+    if (manualOverride && String(manualOverride).trim()) {
+        return String(manualOverride).trim();
+    }
+    if (typeof window.APP_BUILD_VERSION !== 'undefined' && window.APP_BUILD_VERSION) {
+        return String(window.APP_BUILD_VERSION).trim();
+    }
     if (typeof APP_BUILD_VERSION !== 'undefined' && APP_BUILD_VERSION) {
         return String(APP_BUILD_VERSION).trim();
     }
@@ -249,6 +252,41 @@ function mostraVersioneAttiva2() {
         "• Parametro ?v nell'indirizzo: " + urlVer + "\n" +
         "• Modello Gemini attivo: " + (cfg.model || MACRO_MODEL_PRESET)
     );
+}
+
+async function cambiaVersioneManuale2() {
+    const ok = await askAdminPassword2("Inserisci la password per modificare manualmente la versione");
+    if (!ok) return;
+
+    const currentVer = getActiveBuildVersion2();
+    const nuovaVer = prompt(
+        "Versione attualmente attiva: v" + currentVer + "\n\nInserisci il nuovo numero di versione (es. 329):",
+        currentVer
+    );
+
+    if (nuovaVer === null) return;
+    const cleanVer = String(nuovaVer).trim().replace(/^v/i, '');
+    if (!cleanVer) {
+        alert("Numero di versione non valido.");
+        return;
+    }
+
+    window.APP_BUILD_VERSION = cleanVer;
+    localStorage.setItem('sv2_installed_version', cleanVer);
+    localStorage.setItem('sv2_manual_version_override', cleanVer);
+
+    if ('caches' in window) {
+        try {
+            const names = await caches.keys();
+            await Promise.all(names.map((n) => caches.delete(n)));
+        } catch (e) {}
+    }
+
+    alert(
+        "✅ Versione aggiornata manualmente a v" + cleanVer + ".\n\n" +
+        "La pagina verrà ricaricata per applicare la nuova versione."
+    );
+    window.location.reload(true);
 }
 
 async function askAdminPassword2(descMessage) {
