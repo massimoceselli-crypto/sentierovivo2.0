@@ -1,348 +1,103 @@
-const MENU2_TOGGLES_KEY = 'sentierovivo2_menu_toggles';
-const MENU2_GEMINI_CONFIG_KEY = 'sentierovivo2_gemini_config';
-const MENU2_ADMIN_PASSWORDS = ['MASSIMO2026', 'MASSIMOMASTER2026', 'SENTIEROVIP', 'SENTIERO2026'];
-
-// Unregister automatico di vecchi Service Worker per evitare blocchi da cache offline
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let registration of registrations) {
-            registration.unregister();
-        }
-    }).catch(function(err) {
-        console.warn("Nessun Service Worker da rimuovere:", err);
-    });
-}
-
-const MENU2_FALLBACK_GEMINI_MODELS = [
-    { id: 'gemini-2.5-flash', label: 'gemini-2.5-flash (rapido e versatile)' },
-    { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro (ragionamento approfondito)' },
-    { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite (leggero e veloce)' }
+const LICENZA2_STORAGE_KEY = 'sentierovivo2_license_state';
+const LICENZA2_TRIAL_DAYS = 30;
+const LICENZA2_VALID_KEYS = [
+    'MASSIMO2026',
+    'SENTIEROVIP2026',
+    'MASSIMOMASTER2026',
+    'SENTIEROVIP',
+    'SENTIERO2026'
 ];
 
-function loadMenu2Toggles() {
-    const defaults = { poi: true, mountainRoads: true, meteo24: true };
-    try {
-        const raw = localStorage.getItem(MENU2_TOGGLES_KEY);
-        if (!raw) return defaults;
-        const parsed = JSON.parse(raw);
-        return {
-            poi: parsed.poi !== undefined ? !!parsed.poi : true,
-            mountainRoads: parsed.mountainRoads !== undefined ? !!parsed.mountainRoads : true,
-            meteo24: parsed.meteo24 !== undefined ? !!parsed.meteo24 : true
+function getTodayDateString2() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function initTrialAndLicense() {
+    const todayStr = getTodayDateString2();
+    const raw = localStorage.getItem(LICENZA2_STORAGE_KEY);
+
+    if (!raw) {
+        const initial = {
+            startDate: todayStr,
+            lastSeenDate: todayStr,
+            activated: false,
+            activeKey: ''
         };
-    } catch (err) {
-        return defaults;
+        localStorage.setItem(LICENZA2_STORAGE_KEY, JSON.stringify(initial));
+        return { status: 'trial', daysLeft: LICENZA2_TRIAL_DAYS };
     }
+
+    const data = JSON.parse(raw);
+
+    if (data.activated) {
+        return { status: 'activated', daysLeft: 999, activeKey: data.activeKey || '' };
+    }
+
+    if (data.lastSeenDate && todayStr < data.lastSeenDate) {
+        return { status: 'tampered', daysLeft: 0 };
+    }
+
+    data.lastSeenDate = todayStr;
+    localStorage.setItem(LICENZA2_STORAGE_KEY, JSON.stringify(data));
+
+    const start = new Date(data.startDate + 'T00:00:00');
+    const now = new Date(todayStr + 'T00:00:00');
+    const elapsedDays = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+    const daysLeft = LICENZA2_TRIAL_DAYS - elapsedDays;
+
+    if (daysLeft <= 0) {
+        return { status: 'expired', daysLeft: 0 };
+    }
+
+    return { status: 'trial', daysLeft };
 }
 
-function saveMenu2Toggles(toggles) {
-    localStorage.setItem(MENU2_TOGGLES_KEY, JSON.stringify(toggles));
-    renderMenu2TogglesUi();
-}
-
-function toggleMenu2Feature(keyName) {
-    const current = loadMenu2Toggles();
-    current[keyName] = !current[keyName];
-    saveMenu2Toggles(current);
-}
-
-function renderMenu2TogglesUi() {
-    const t = loadMenu2Toggles();
-    const setLabel = (id, active) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.innerText = active ? 'ATTIVATA' : 'DISATTIVATA';
-        el.style.color = active ? '#81c784' : '#ef9a9a';
+function activateLicenseKey(codeInput) {
+    const cleaned = (codeInput || '').trim().toUpperCase();
+    if (!LICENZA2_VALID_KEYS.includes(cleaned)) {
+        return false;
+    }
+    const todayStr = getTodayDateString2();
+    const current = {
+        startDate: todayStr,
+        lastSeenDate: todayStr,
+        activated: true,
+        activeKey: cleaned
     };
-    setLabel('toggle-status-poi', t.poi);
-    setLabel('toggle-status-mountain', t.mountainRoads);
-    setLabel('toggle-status-meteo24', t.meteo24);
-}
-
-function isMenu2FeatureEnabled(keyName, labelItaliano) {
-    const t = loadMenu2Toggles();
-    if (!t[keyName]) {
-        alert(`La funzione "${labelItaliano}" è attualmente DISATTIVATA. Puoi riattivarla dal Menu.`);
-        return false;
-    }
+    localStorage.setItem(LICENZA2_STORAGE_KEY, JSON.stringify(current));
     return true;
 }
 
-function apriCartellaPercorsi2() {
-    if (typeof renderSavedTracks2Ui === 'function') {
-        renderSavedTracks2Ui();
-    }
-    const drawer = document.getElementById('sentiero2-menu-drawer');
-    if (drawer) drawer.style.display = 'none';
-    const panel = document.getElementById('sentiero2-archivio-modal');
-    if (panel) panel.style.display = 'block';
+function resetLicenseState2() {
+    localStorage.removeItem(LICENZA2_STORAGE_KEY);
 }
 
-function menuRegistraVocale2() {
-    if (typeof handleAudioWp2 === 'function') handleAudioWp2();
-}
+function handleLicenseSubmit() {
+    const inputEl = document.getElementById('license-code-input');
+    const statusEl = document.getElementById('license-status-text');
+    const panelEl = document.getElementById('license-panel');
+    const code = inputEl ? inputEl.value : '';
 
-function menuRegistraVideo2() {
-    const input = document.getElementById('wp2-video-file');
-    if (input) input.click();
-}
-
-function menuScattaFotoWaypoint2() {
-    const input = document.getElementById('wp2-photo-file');
-    if (input) input.click();
-}
-
-function menuRitornoARitroso2() {
-    const coords = typeof track2Coordinates !== 'undefined' ? track2Coordinates : [];
-    if (!coords || coords.length < 2) {
-        alert("Servono almeno 2 punti registrati per calcolare il ritorno a ritroso.");
-        return;
-    }
-    const reversed = [...coords].reverse();
-    if (typeof sentieroMap !== 'undefined' && sentieroMap) {
-        if (window._sentiero2BacktrackLine) {
-            sentieroMap.removeLayer(window._sentiero2BacktrackLine);
+    if (activateLicenseKey(code)) {
+        const clean = String(code).trim().toUpperCase();
+        if (statusEl) {
+            statusEl.innerText = "Licenza attivata (" + clean + ").";
         }
-        window._sentiero2BacktrackLine = L.polyline(reversed, {
-            color: '#ff9800',
-            weight: 6,
-            dashArray: '10, 10',
-            opacity: 0.95
-        }).addTo(sentieroMap);
-        sentieroMap.fitBounds(window._sentiero2BacktrackLine.getBounds(), { padding: [25, 25] });
-    }
-    alert("Ritorno a ritroso tracciato sulla mappa (linea tratteggiata arancione).");
-}
-
-function menuCreaNuovoPercorsoRientro2() {
-    const coords = typeof track2Coordinates !== 'undefined' ? track2Coordinates : [];
-    if (!coords || coords.length < 2) {
-        alert("Servono almeno 2 punti registrati per creare un nuovo percorso di rientro.");
-        return;
-    }
-    const returnCoords = [...coords].reverse();
-    if (typeof startTrack2 === 'function') {
-        startTrack2((typeof track2Name !== 'undefined' && track2Name ? track2Name : 'Percorso') + ' - Rientro');
-        track2Coordinates = returnCoords;
-        if (typeof redrawTrack2Line === 'function') redrawTrack2Line();
-        if (typeof sentieroMap !== 'undefined' && sentieroMap && returnCoords.length > 0) {
-            sentieroMap.setView(returnCoords[0], 16);
+        alert("Licenza attivata con successo (" + clean + ")!");
+        if (panelEl) {
+            panelEl.style.display = 'none';
         }
-        const statusLbl = document.getElementById('track2-status-label');
-        if (statusLbl) statusLbl.innerText = "Nuovo percorso di rientro avviato";
-        alert("Nuovo percorso di rientro creato e avviato dal punto attuale verso la partenza.");
-    }
-}
-
-function menuCercaPuntiInteresse2() {
-    if (!isMenu2FeatureEnabled('poi', 'Cerca punti di interesse')) return;
-    const lat = typeof sentieroCurrentLat !== 'undefined' ? sentieroCurrentLat : 43.5485;
-    const lng = typeof sentieroCurrentLng !== 'undefined' ? sentieroCurrentLng : 10.3106;
-    if (typeof sentieroMap !== 'undefined' && sentieroMap) {
-        L.circle([lat, lng], { radius: 1500, color: '#4fc3f7', fillColor: '#4fc3f7', fillOpacity: 0.12 }).addTo(sentieroMap);
-        sentieroMap.setView([lat, lng], 14);
-    }
-    alert(`Ricerca punti di interesse (rifugi, sorgenti, aree sosta) entro 1,5 km da: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-}
-
-function menuStradeInMontagna2() {
-    if (!isMenu2FeatureEnabled('mountainRoads', 'Strade in montagna')) return;
-    const lat = typeof sentieroCurrentLat !== 'undefined' ? sentieroCurrentLat : 43.5485;
-    const lng = typeof sentieroCurrentLng !== 'undefined' ? sentieroCurrentLng : 10.3106;
-    alert(`Modalità Strade in montagna attiva intorno a ${lat.toFixed(5)}, ${lng.toFixed(5)}: verifica pendenze, tornanti e viabilità sterrata.`);
-}
-
-function menuMeteo24Ore2() {
-    if (!isMenu2FeatureEnabled('meteo24', 'Meteo 24')) return;
-    const lat = typeof sentieroCurrentLat !== 'undefined' ? sentieroCurrentLat : 43.5485;
-    const lng = typeof sentieroCurrentLng !== 'undefined' ? sentieroCurrentLng : 10.3106;
-    alert(`Meteo 24 ore per coordinate ${lat.toFixed(4)}, ${lng.toFixed(4)}: controlla le previsioni locali prima di proseguire.`);
-}
-
-function richiediPasswordAdminMenu2() {
-    const inserita = prompt("Inserisci la password (es. Massimo2026):");
-    if (inserita === null) return false;
-    const pulita = inserita.trim().toUpperCase();
-    if (!MENU2_ADMIN_PASSWORDS.includes(pulita)) {
-        alert("Password non corretta.");
-        return false;
-    }
-    return true;
-}
-
-function apriGestioneLicenzaDaMenu2() {
-    if (!richiediPasswordAdminMenu2()) return;
-    const menuEl = document.getElementById('sentiero2-menu-drawer');
-    if (menuEl) menuEl.style.display = 'none';
-
-    if (typeof mostraPannelloCambioChiave2 === 'function') {
-        mostraPannelloCambioChiave2();
+        if (typeof refreshLicenseUi === 'function') {
+            refreshLicenseUi();
+        }
     } else {
-        const panel = document.getElementById('license-panel');
-        if (panel) {
-            panel.style.display = 'block';
-            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (statusEl) {
+            statusEl.innerText = "Codice non valido. Usa ad esempio MASSIMO2026 o SENTIEROVIP2026.";
         }
+        alert("Codice di licenza non valido.");
     }
-}
-
-function assicuraPannelloGeminiEsistente2() {
-    let box = document.getElementById('gemini-admin-panel');
-    if (box) {
-        box.style.zIndex = '10000';
-        return box;
-    }
-    box = document.createElement('div');
-    box.id = 'gemini-admin-panel';
-    box.className = 'sv2-fullscreen-drawer';
-    box.style.cssText = 'background:#16202a; display:none; z-index:10000;';
-    box.innerHTML = `
-        <div style="max-width:620px; margin:0 auto; padding-bottom:40px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #37474f; padding-bottom:10px;">
-                <h2 style="margin:0; color:#80cbc4; font-size:20px;">⚙️ Configurazione Gemini</h2>
-                <button type="button" onclick="chiudiPannelloGemini2()" style="padding:8px 14px; border:none; border-radius:8px; background:#c62828; color:#fff; font-weight:bold; cursor:pointer;">✕ Chiudi</button>
-            </div>
-            <label for="gemini-api-key-input" style="display:block; margin-bottom:6px; font-weight:bold; color:#e0f2f1;">Chiave API Gemini attuale / nuova:</label>
-            <input id="gemini-api-key-input" type="text" placeholder="Incolla qui la chiave API Gemini..." style="width:100%; padding:11px; border-radius:8px; border:1px solid #546e7a; background:#263238; color:#fff; margin-bottom:14px; box-sizing:border-box; font-size:15px;">
-            <label for="gemini-model-input" style="display:block; margin-bottom:6px; font-weight:bold; color:#e0f2f1;">Modello Gemini:</label>
-            <input id="gemini-model-input" type="text" placeholder="es. gemini-2.5-flash" style="width:100%; padding:11px; border-radius:8px; border:1px solid #546e7a; background:#263238; color:#fff; margin-bottom:12px; box-sizing:border-box; font-size:15px;">
-            <div id="gemini-models-list" style="display:none; margin-bottom:14px;"></div>
-            <button type="button" onclick="salvaConfigurazioneGemini2()" style="width:100%; padding:12px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:15px; cursor:pointer;">💾 Salva configurazione Gemini</button>
-        </div>
-    `;
-    document.body.appendChild(box);
-    return box;
-}
-
-function chiudiPannelloGemini2() {
-    const box = document.getElementById('gemini-admin-panel');
-    if (box) box.style.display = 'none';
-}
-
-function apriPannelloGeminiProtetto2(focusField) {
-    if (!richiediPasswordAdminMenu2()) return;
-    const menuEl = document.getElementById('sentiero2-menu-drawer');
-    if (menuEl) menuEl.style.display = 'none';
-
-    const box = assicuraPannelloGeminiEsistente2();
-    box.style.display = 'block';
-    box.scrollTop = 0;
-    loadGeminiConfigToInputs2();
-    if (focusField === 'model') {
-        const mInp = document.getElementById('gemini-model-input');
-        if (mInp) mInp.focus();
-    } else {
-        const kInp = document.getElementById('gemini-api-key-input');
-        if (kInp) kInp.focus();
-    }
-}
-
-function renderGeminiModelsButtons2(modelsArray, intestazione) {
-    const listBox = document.getElementById('gemini-models-list');
-    if (!listBox) return;
-    listBox.style.display = 'block';
-    const buttonsHtml = modelsArray.map((m) => {
-        const safeId = String(m.id || '').replace(/'/g, "\\'");
-        const safeLabel = String(m.label || m.id || '');
-        return `<button type="button" onclick="selezionaModelloGemini2('${safeId}')" style="display:block; width:100%; text-align:left; padding:8px 10px; margin-bottom:6px; border-radius:6px; border:1px solid #546e7a; background:#263238; color:#fff; font-size:14px; cursor:pointer;">${safeLabel}</button>`;
-    }).join('');
-    listBox.innerHTML = `
-        <div style="font-size:13px; color:#ffd54f; font-weight:bold; margin-bottom:8px;">${intestazione}</div>
-        <div style="max-height:300px; overflow-y:auto; padding-right:4px;">${buttonsHtml}</div>
-    `;
-}
-
-async function mostraModelliGeminiDisponibili2() {
-    if (!richiediPasswordAdminMenu2()) return;
-    const menuEl = document.getElementById('sentiero2-menu-drawer');
-    if (menuEl) menuEl.style.display = 'none';
-
-    const box = assicuraPannelloGeminiEsistente2();
-    box.style.display = 'block';
-    box.scrollTop = 0;
-    loadGeminiConfigToInputs2();
-
-    const listBox = document.getElementById('gemini-models-list');
-    const kInp = document.getElementById('gemini-api-key-input');
-    const apiKey = ((kInp && kInp.value) ? kInp.value : getGeminiConfig2().apiKey).trim();
-
-    if (!apiKey) {
-        renderGeminiModelsButtons2(MENU2_FALLBACK_GEMINI_MODELS, 'Chiave API non trovata: mostrati i modelli di base (inserisci prima la chiave e salvala):');
-        return;
-    }
-
-    if (listBox) {
-        listBox.style.display = 'block';
-        listBox.innerHTML = `<div style="font-size:13px; color:#80cbc4; padding:8px;">⏳ Lettura elenco completo modelli da Google...</div>`;
-    }
-
-    try {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
-        const data = await resp.json();
-        if (!resp.ok) {
-            const errMsg = (data && data.error && data.error.message) ? data.error.message : `HTTP ${resp.status}`;
-            throw new Error(errMsg);
-        }
-        const rawModels = Array.isArray(data.models) ? data.models : [];
-        const allModels = rawModels
-            .map((m) => {
-                const shortId = String(m.name || '').replace(/^models\//, '');
-                const disp = m.displayName ? `${shortId} (${m.displayName})` : shortId;
-                return { id: shortId, label: disp };
-            })
-            .filter((m) => !!m.id);
-
-        if (allModels.length > 0) {
-            renderGeminiModelsButtons2(allModels, `Elenco modelli restituito da Google (${allModels.length} modelli — tocca per scegliere):`);
-        } else {
-            renderGeminiModelsButtons2(MENU2_FALLBACK_GEMINI_MODELS, 'Google ha restituito un elenco vuoto: mostrati i 3 modelli di base:');
-        }
-    } catch (err) {
-        renderGeminiModelsButtons2(MENU2_FALLBACK_GEMINI_MODELS, `Elenco online non caricato (${err.message || 'errore di rete'}) — mostrati i 3 modelli di base:`);
-    }
-}
-
-function selezionaModelloGemini2(nomeModello) {
-    const mInp = document.getElementById('gemini-model-input');
-    if (mInp) mInp.value = nomeModello;
-}
-
-function getGeminiConfig2() {
-    try {
-        const raw = localStorage.getItem(MENU2_GEMINI_CONFIG_KEY);
-        if (!raw) return { apiKey: '', model: 'gemini-2.5-flash' };
-        const parsed = JSON.parse(raw);
-        let m = (parsed.model || '').trim().replace(/^models\//i, '');
-        if (!m || m.includes(' ') || m.includes('1.5')) {
-            m = 'gemini-2.5-flash';
-        }
-        return { apiKey: (parsed.apiKey || '').trim(), model: m };
-    } catch (err) {
-        return { apiKey: '', model: 'gemini-2.5-flash' };
-    }
-}
-
-function loadGeminiConfigToInputs2() {
-    try {
-        const cfg = getGeminiConfig2();
-        const kInp = document.getElementById('gemini-api-key-input');
-        const mInp = document.getElementById('gemini-model-input');
-        if (kInp) kInp.value = cfg.apiKey || '';
-        if (mInp) mInp.value = cfg.model || 'gemini-2.5-flash';
-    } catch (err) {
-        console.warn("Errore lettura configurazione Gemini:", err);
-    }
-}
-
-function salvaConfigurazioneGemini2() {
-    const kInp = document.getElementById('gemini-api-key-input');
-    const mInp = document.getElementById('gemini-model-input');
-    const apiKey = kInp ? kInp.value.trim() : '';
-    let model = mInp ? mInp.value.trim().replace(/^models\//i, '') : '';
-    if (!model || model.includes(' ') || model.includes('1.5')) {
-        model = 'gemini-2.5-flash';
-    }
-    localStorage.setItem(MENU2_GEMINI_CONFIG_KEY, JSON.stringify({ apiKey, model }));
-    alert(`Configurazione Gemini salvata.\nModello attivo: ${model}`);
-    chiudiPannelloGemini2();
 }
