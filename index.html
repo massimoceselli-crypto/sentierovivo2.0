@@ -34,20 +34,32 @@
 
         .sv2-user-pulse-wrap {
             position: relative;
-            width: 34px;
-            height: 34px;
+            width: 38px;
+            height: 38px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .sv2-user-pulse-halo {
             position: absolute;
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background: rgba(76, 175, 80, 0.45);
             border: 2px solid rgba(165, 214, 167, 0.9);
             animation: mapUserPulseRing 1.6s infinite ease-out;
+            pointer-events: none;
+        }
+        .sv2-user-pulse-arrow {
+            position: absolute;
+            top: 0px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 10px solid #ffeb3b;
+            transform-origin: 50% 19px;
+            z-index: 3;
             pointer-events: none;
         }
         .sv2-user-pulse-dot {
@@ -154,9 +166,9 @@
     </div>
 
     <div id="sv2-map-wrap" style="max-width:520px; margin:0 auto 10px auto;">
-        <div id="map2" style="width:100%; height:62vh; min-height:340px; border-radius:12px; border:2px solid #2e7d32; overflow:hidden; background:#1b2620;"></div>
+        <div id="map2" style="position:relative; width:100%; height:62vh; min-height:340px; border-radius:12px; border:2px solid #2e7d32; overflow:hidden; background:#1b2620;"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px;">
-            <button id="btn-course-up2" type="button" onclick="toggleCourseUpMode2()" style="flex:1; padding:8px 10px; border:1px solid #455a64; border-radius:8px; background:#263238; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">🧭 Direzione su: ATTIVA</button>
+            <button id="btn-course-up2" type="button" onclick="toggleCourseUpMode2()" style="flex:1; padding:8px 10px; border:1px solid #455a64; border-radius:8px; background:#2e7d32; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">🧭 Direzione su: ATTIVA</button>
             <button type="button" onclick="resetMapNorthUp2()" style="padding:8px 12px; border:1px solid #455a64; border-radius:8px; background:#1c2833; color:#90caf9; font-weight:bold; font-size:13px; cursor:pointer;">⬆️ Nord su</button>
         </div>
     </div>
@@ -272,7 +284,7 @@
     <script src="waypoint.js"></script>
     <script src="archivio.js"></script>
     <script src="chiave-licenza.js"></script>
-    <script src="menu-sentiero.js?v=323"></script>
+    <script src="menu-sentiero.js?v=324"></script>
     <script>
         let currentGpsCoords2 = null;
         let fallbackMap2 = null;
@@ -286,9 +298,9 @@
         function createPulsingUserIcon2() {
             return L.divIcon({
                 className: 'sv2-pulse-divicon',
-                html: '<div class="sv2-user-pulse-wrap"><span class="sv2-user-pulse-halo"></span><span class="sv2-user-pulse-dot"></span></div>',
-                iconSize: [34, 34],
-                iconAnchor: [17, 17]
+                html: '<div class="sv2-user-pulse-wrap"><span class="sv2-user-pulse-halo"></span><span id="sv2-user-arrow" class="sv2-user-pulse-arrow"></span><span class="sv2-user-pulse-dot"></span></div>',
+                iconSize: [38, 38],
+                iconAnchor: [19, 19]
             });
         }
 
@@ -299,17 +311,15 @@
             if (!activeMap || typeof activeMap.getContainer !== 'function') return;
             const container = activeMap.getContainer();
             const mapPane = container.querySelector('.leaflet-map-pane');
-            if (!mapPane) return;
-
-            if (!courseUpEnabled2) {
-                mapPane.style.transformOrigin = '50% 50%';
+            if (mapPane) {
+                mapPane.style.transformOrigin = '';
                 mapPane.style.transform = '';
-                return;
             }
-
-            const angle = Number.isFinite(deg) ? deg : 0;
-            mapPane.style.transformOrigin = '50% 50%';
-            mapPane.style.transform = `rotate(${-angle}deg)`;
+            const arrowEl = container.querySelector('#sv2-user-arrow');
+            if (arrowEl) {
+                const angle = (courseUpEnabled2 && Number.isFinite(deg)) ? deg : 0;
+                arrowEl.style.transform = `rotate(${angle}deg)`;
+            }
         }
 
         function updateCourseUpButton2() {
