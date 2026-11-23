@@ -275,6 +275,28 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script>
+        // === UNICO PUNTO DI CONTROLLO VERSIONE APPLICAZIONE ===
+        window.APP_BUILD_VERSION = '328';
+
+        // Auto-Sincronizzazione della cache per l'icona sul telefono
+        (function checkAndForceAutoUpdate() {
+            const lastVersion = localStorage.getItem('sv2_installed_version');
+            if (lastVersion && lastVersion !== window.APP_BUILD_VERSION) {
+                localStorage.setItem('sv2_installed_version', window.APP_BUILD_VERSION);
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => caches.delete(name));
+                    });
+                }
+                window.location.reload(true);
+            } else {
+                localStorage.setItem('sv2_installed_version', window.APP_BUILD_VERSION);
+            }
+        })();
+    </script>
+
     <script src="benvenuto.js"></script>
     <script src="licenza.js"></script>
     <script src="mappa.js"></script>
@@ -284,7 +306,14 @@
     <script src="waypoint.js"></script>
     <script src="archivio.js"></script>
     <script src="chiave-licenza.js"></script>
-    <script src="menu-sentiero.js?v=328"></script>
+    
+    <script>
+        // Carica menu-sentiero.js inserendo automaticamente il parametro della versione attiva
+        const menuScript = document.createElement('script');
+        menuScript.src = 'menu-sentiero.js?v=' + window.APP_BUILD_VERSION;
+        document.head.appendChild(menuScript);
+    </script>
+
     <script>
         let currentGpsCoords2 = null;
         let fallbackMap2 = null;
@@ -1271,9 +1300,9 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            if (typeof APP_BUILD_VERSION !== 'undefined') {
+            if (typeof window.APP_BUILD_VERSION !== 'undefined') {
                 setTimeout(() => {
-                    alert("SentieroVivo 2.0 - Versione attiva: v" + APP_BUILD_VERSION);
+                    alert("SentieroVivo 2.0 - Versione attiva: v" + window.APP_BUILD_VERSION);
                 }, 250);
             }
             updateVoiceToggleButton2();
