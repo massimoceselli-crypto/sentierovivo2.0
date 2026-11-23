@@ -2,15 +2,15 @@ const GEMINI2_CONFIG_KEY = 'sv2_gemini_config';
 const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
 const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
 const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
-const MACRO_MODEL_PRESET = 'gemini-2.5-flash';
-const APP_BUILD_VERSION = '324';
+const MACRO_MODEL_PRESET = 'gemini-2.5-flash-lite';
+const APP_BUILD_VERSION = '325';
 
 const GEMINI_KNOWN_MODELS = [
-    'gemini-2.5-flash',
     'gemini-2.5-flash-lite',
+    'gemini-2.5-flash',
     'gemini-2.5-pro',
-    'gemini-2.0-flash',
     'gemini-2.0-flash-lite',
+    'gemini-2.0-flash',
     'gemini-1.5-flash',
     'gemini-1.5-pro'
 ];
@@ -150,7 +150,7 @@ function getActiveBuildVersion2() {
         return String(APP_BUILD_VERSION).trim();
     }
     const params = new URLSearchParams(window.location.search);
-    return (params.get('v') || '324').trim();
+    return (params.get('v') || '325').trim();
 }
 
 function mostraVersioneAttiva2() {
@@ -238,11 +238,11 @@ async function apriPannelloGeminiProtetto2(modo) {
         const elencoTesto = GEMINI_KNOWN_MODELS.join(', ');
         const newModel = prompt(
             "Modelli consigliati: " + elencoTesto + "\n\nInserisci il modello Gemini:",
-            current.model
+            current.model || MACRO_MODEL_PRESET
         );
-        if (newModel !== null) {
-            saveGeminiConfig2(current.apiKey, newModel);
-            alert("Modello Gemini salvato: " + newModel);
+        if (newModel !== null && newModel.trim()) {
+            saveGeminiConfig2(current.apiKey, newModel.trim());
+            alert("Modello Gemini salvato: " + newModel.trim());
         }
     }
 }
@@ -264,7 +264,7 @@ async function fetchLiveGeminiModels2(apiKey) {
 }
 
 async function mostraModelliGeminiDisponibili2() {
-    const ok = await askAdminPassword2("Inserisci la password per vedere i modelli");
+    const ok = await askAdminPassword2("Inserisci la password per vedere e scegliere il modello");
     if (!ok) return;
 
     const current = getGeminiConfig2();
@@ -280,19 +280,31 @@ async function mostraModelliGeminiDisponibili2() {
     }
 
     const merged = Array.from(new Set([...liveModels, ...GEMINI_KNOWN_MODELS]));
-    const formattedList = merged.map((name) => {
+    const formattedList = merged.map((name, idx) => {
         const attivo = (current.model || '').trim() === name ? ' [ATTIVO]' : '';
-        return "• " + name + attivo;
+        return `${idx + 1}. ${name}${attivo}`;
     }).join("\n");
 
     const fonteNota = liveModels.length > 0
-        ? "\n(Include modelli verificati in tempo reale dalla tua chiave API)"
+        ? "\n(Include modelli verificati dalla chiave API)"
         : (liveError ? "\n(Elenco standard; verifica live non riuscita: " + liveError + ")" : "\n(Elenco standard dei modelli riconosciuti)");
 
-    alert(
-        "Modelli Gemini riconosciuti:\n\n" +
+    const chosen = prompt(
+        "Modelli Gemini disponibili:\n\n" +
         formattedList +
         fonteNota +
-        "\n\nPer cambiare modello usa 'Imposta modello Gemini'."
+        "\n\nScrivi il numero (es. 1) o il nome del modello da attivare, oppure premi Annulla:",
+        current.model || MACRO_MODEL_PRESET
     );
+
+    if (chosen !== null && chosen.trim()) {
+        const trimmed = chosen.trim();
+        const num = parseInt(trimmed, 10);
+        let selectedModel = trimmed;
+        if (!Number.isNaN(num) && String(num) === trimmed && num >= 1 && num <= merged.length) {
+            selectedModel = merged[num - 1];
+        }
+        saveGeminiConfig2(current.apiKey, selectedModel);
+        alert("Modello Gemini impostato su: " + selectedModel);
+    }
 }
