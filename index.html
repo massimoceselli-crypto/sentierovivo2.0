@@ -26,6 +26,41 @@
             100% { background-color: #ffc107; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.95); opacity: 1; }
         }
 
+        @keyframes mapUserPulseRing {
+            0% { transform: scale(0.7); opacity: 0.9; }
+            70% { transform: scale(2.2); opacity: 0; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+
+        .sv2-user-pulse-wrap {
+            position: relative;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sv2-user-pulse-halo {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(76, 175, 80, 0.45);
+            border: 2px solid rgba(165, 214, 167, 0.9);
+            animation: mapUserPulseRing 1.6s infinite ease-out;
+            pointer-events: none;
+        }
+        .sv2-user-pulse-dot {
+            position: relative;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #2e7d32;
+            border: 2.5px solid #ffffff;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.75);
+            z-index: 2;
+        }
+
         #gps-status-dot.gps-active,
         .gps-active {
             background-color: #4caf50 !important;
@@ -120,6 +155,10 @@
 
     <div id="sv2-map-wrap" style="max-width:520px; margin:0 auto 10px auto;">
         <div id="map2" style="width:100%; height:62vh; min-height:340px; border-radius:12px; border:2px solid #2e7d32; overflow:hidden; background:#1b2620;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px;">
+            <button id="btn-course-up2" type="button" onclick="toggleCourseUpMode2()" style="flex:1; padding:8px 10px; border:1px solid #455a64; border-radius:8px; background:#263238; color:#fff; font-weight:bold; font-size:13px; cursor:pointer;">🧭 Direzione su: ATTIVA</button>
+            <button type="button" onclick="resetMapNorthUp2()" style="padding:8px 12px; border:1px solid #455a64; border-radius:8px; background:#1c2833; color:#90caf9; font-weight:bold; font-size:13px; cursor:pointer;">⬆️ Nord su</button>
+        </div>
     </div>
 
     <div id="sv2-main-buttons" style="max-width:520px; margin:0 auto 12px auto; display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
@@ -240,7 +279,72 @@
         let fallbackUserMarker2 = null;
         let gpsWatchId2 = null;
         let lastCenteredCoords2 = null;
+        let lastHeadingDeg2 = 0;
+        let courseUpEnabled2 = true;
         const VOICE_PREF_KEY2 = 'sv2_assistant_voice_enabled';
+
+        function createPulsingUserIcon2() {
+            return L.divIcon({
+                className: 'sv2-pulse-divicon',
+                html: '<div class="sv2-user-pulse-wrap"><span class="sv2-user-pulse-halo"></span><span class="sv2-user-pulse-dot"></span></div>',
+                iconSize: [34, 34],
+                iconAnchor: [17, 17]
+            });
+        }
+
+        function applyMapHeadingRotation2(deg) {
+            const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.getContainer === 'function')
+                ? sentieroMap
+                : fallbackMap2;
+            if (!activeMap || typeof activeMap.getContainer !== 'function') return;
+            const container = activeMap.getContainer();
+            const mapPane = container.querySelector('.leaflet-map-pane');
+            if (!mapPane) return;
+
+            if (!courseUpEnabled2) {
+                mapPane.style.transformOrigin = '50% 50%';
+                mapPane.style.transform = '';
+                return;
+            }
+
+            const angle = Number.isFinite(deg) ? deg : 0;
+            mapPane.style.transformOrigin = '50% 50%';
+            mapPane.style.transform = `rotate(${-angle}deg)`;
+        }
+
+        function updateCourseUpButton2() {
+            const btn = document.getElementById('btn-course-up2');
+            if (!btn) return;
+            btn.innerText = courseUpEnabled2 ? '🧭 Direzione su: ATTIVA' : '🧭 Direzione su: OFF';
+            btn.style.background = courseUpEnabled2 ? '#2e7d32' : '#263238';
+        }
+
+        function toggleCourseUpMode2() {
+            courseUpEnabled2 = !courseUpEnabled2;
+            updateCourseUpButton2();
+            applyMapHeadingRotation2(lastHeadingDeg2);
+        }
+
+        function resetMapNorthUp2() {
+            courseUpEnabled2 = false;
+            lastHeadingDeg2 = 0;
+            updateCourseUpButton2();
+            applyMapHeadingRotation2(0);
+        }
+
+        function computeBearingDeg2(fromPos, toPos) {
+            if (!fromPos || !toPos) return null;
+            const dist = distanceMeters2(fromPos, toPos);
+            if (!Number.isFinite(dist) || dist < 2) return null;
+            const toRad = (v) => (v * Math.PI) / 180;
+            const toDeg = (v) => (v * 180) / Math.PI;
+            const lat1 = toRad(fromPos.lat);
+            const lat2 = toRad(toPos.lat);
+            const dLon = toRad(toPos.lon - fromPos.lon);
+            const y = Math.sin(dLon) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+            return (toDeg(Math.atan2(y, x)) + 360) % 360;
+        }
 
         function isAssistantVoiceEnabled2() {
             const saved = localStorage.getItem(VOICE_PREF_KEY2);
@@ -315,7 +419,10 @@
 
             if (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.setView === 'function') {
                 setTimeout(() => {
-                    try { sentieroMap.invalidateSize(); } catch (e) {}
+                    try {
+                        sentieroMap.invalidateSize();
+                        applyMapHeadingRotation2(lastHeadingDeg2);
+                    } catch (e) {}
                 }, 150);
                 return sentieroMap;
             }
@@ -331,7 +438,10 @@
             }
 
             setTimeout(() => {
-                try { fallbackMap2.invalidateSize(); } catch (e) {}
+                try {
+                    fallbackMap2.invalidateSize();
+                    applyMapHeadingRotation2(lastHeadingDeg2);
+                } catch (e) {}
             }, 150);
             return fallbackMap2;
         }
@@ -346,10 +456,18 @@
             return 2 * R * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
         }
 
-        function updateMapWithPosition2(lat, lon) {
+        function updateMapWithPosition2(lat, lon, gpsHeading) {
             const nextPos = { lat: Number(lat), lon: Number(lon) };
+            const prevPos = currentGpsCoords2;
             currentGpsCoords2 = nextPos;
             setGpsUiState2(true, `GPS attivo (${nextPos.lat.toFixed(4)}, ${nextPos.lon.toFixed(4)})`);
+
+            const computedBearing = computeBearingDeg2(prevPos, nextPos);
+            if (typeof gpsHeading === 'number' && !Number.isNaN(gpsHeading) && gpsHeading >= 0) {
+                lastHeadingDeg2 = gpsHeading;
+            } else if (computedBearing !== null) {
+                lastHeadingDeg2 = computedBearing;
+            }
 
             const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.setView === 'function')
                 ? sentieroMap
@@ -358,22 +476,20 @@
             if (activeMap) {
                 try {
                     const moved = distanceMeters2(lastCenteredCoords2, nextPos);
-                    if (!lastCenteredCoords2 || moved >= 3) {
+                    if (!lastCenteredCoords2 || moved >= 2) {
                         const zoomLvl = activeMap.getZoom ? Math.max(activeMap.getZoom(), 15) : 15;
                         activeMap.setView([nextPos.lat, nextPos.lon], zoomLvl, { animate: false });
                         lastCenteredCoords2 = nextPos;
                     }
                     if (!fallbackUserMarker2) {
-                        fallbackUserMarker2 = L.circleMarker([nextPos.lat, nextPos.lon], {
-                            radius: 8,
-                            color: '#ffffff',
-                            weight: 2,
-                            fillColor: '#4caf50',
-                            fillOpacity: 1
+                        fallbackUserMarker2 = L.marker([nextPos.lat, nextPos.lon], {
+                            icon: createPulsingUserIcon2(),
+                            interactive: false
                         }).addTo(activeMap);
                     } else {
                         fallbackUserMarker2.setLatLng([nextPos.lat, nextPos.lon]);
                     }
+                    applyMapHeadingRotation2(lastHeadingDeg2);
                 } catch (e) {}
             }
 
@@ -406,7 +522,7 @@
             }
 
             navigator.geolocation.getCurrentPosition(
-                (pos) => updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude),
+                (pos) => updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude, pos.coords.heading),
                 (err) => handleGpsError2(err),
                 { enableHighAccuracy: false, maximumAge: 30000, timeout: 6000 }
             );
@@ -415,7 +531,7 @@
                 navigator.geolocation.clearWatch(gpsWatchId2);
             }
             gpsWatchId2 = navigator.geolocation.watchPosition(
-                (pos) => updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude),
+                (pos) => updateMapWithPosition2(pos.coords.latitude, pos.coords.longitude, pos.coords.heading),
                 (err) => handleGpsError2(err),
                 { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
             );
@@ -1133,6 +1249,7 @@
                 }, 250);
             }
             updateVoiceToggleButton2();
+            updateCourseUpButton2();
             refreshLicenseUi();
             loadSavedInputs();
             refreshFolderSelect2();
