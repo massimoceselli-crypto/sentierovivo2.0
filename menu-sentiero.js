@@ -2,7 +2,7 @@ const GEMINI2_CONFIG_KEY = 'sv2_gemini_config';
 const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
 const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
 const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
-const MACRO_MODEL_PRESET = 'gemini-3.5-flash-lite';
+const MACRO_MODEL_PRESET = 'gemini-1.5-flash';
 
 let _sv2PasswordModalOverlay = null;
 let _sv2PasswordResolver = null;
@@ -177,9 +177,8 @@ async function eseguiMacroConfigurazioneCompleta2() {
 
     alert(
         "⚡ MACRO eseguita con successo!\n\n" +
-        "• Licenza attivata: " + MACRO_LICENSE_KEY_PRESET + "\n" +
-        "• API Key Gemini: configurata\n" +
-        "• Modello Gemini: " + MACRO_MODEL_PRESET + "\n\n" +
+        "• Modello configurato: " + MACRO_MODEL_PRESET + "\n" +
+        "• Licenza e Chiave API attivate.\n\n" +
         "L'applicazione è ora pronta all'uso."
     );
 }
@@ -214,5 +213,5 @@ async function apriPannelloGeminiProtetto2(modo) {
 async function mostraModelliGeminiDisponibili2() {
     const ok = await askAdminPassword2("Inserisci la password per vedere i modelli");
     if (!ok) return;
-    alert("Modello configurato:\n- Gemini-3.5-flash-lite");
+    alert("Modello configurato:\n- gemini-1.5-flash");
 }
