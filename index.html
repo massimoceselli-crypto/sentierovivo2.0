@@ -179,6 +179,7 @@
                     <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('key')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">⚙️ Imposta chiave API Gemini</button>
                     <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('model')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🤖 Imposta modello Gemini</button>
                     <button class="sv2-menu-big-btn" onclick="mostraModelliGeminiDisponibili2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">📋 Mostra modelli disponibili</button>
+                    <button class="sv2-menu-big-btn" onclick="mostraVersioneAttiva2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🏷️ Verifica versione app attiva</button>
                 </div>
             </div>
         </div>
@@ -522,11 +523,11 @@
 
         function sanitizeGeminiModel2(rawModel) {
             const m = (rawModel || '').trim().replace(/^models\//i, '');
-            return m || 'gemini-1.5-flash';
+            return m || 'gemini-2.5-flash';
         }
 
         async function callGeminiApi2(promptText) {
-            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-1.5-flash' };
+            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash' };
             const apiKey = (cfg.apiKey || '').trim();
             if (!apiKey) return { text: null, reason: 'no_key' };
 
