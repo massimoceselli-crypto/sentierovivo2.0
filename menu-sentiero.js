@@ -2,7 +2,7 @@ const GEMINI2_CONFIG_KEY = 'sv2_gemini_config';
 const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
 const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
 const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
-const MACRO_MODEL_PRESET = 'Gemini-3.5-flash-lite';
+const MACRO_MODEL_PRESET = 'gemini-3.5-flash-lite';
 
 let _sv2PasswordModalOverlay = null;
 let _sv2PasswordResolver = null;
