@@ -284,7 +284,7 @@
     <script src="waypoint.js"></script>
     <script src="archivio.js"></script>
     <script src="chiave-licenza.js"></script>
-    <script src="menu-sentiero.js?v=324"></script>
+    <script src="menu-sentiero.js?v=325"></script>
     <script>
         let currentGpsCoords2 = null;
         let fallbackMap2 = null;
@@ -649,7 +649,7 @@
 
         function sanitizeGeminiModel2(rawModel) {
             const m = (rawModel || '').trim().replace(/^models\//i, '').replace(/\s+/g, '');
-            return m || 'gemini-2.5-flash';
+            return m || 'gemini-2.5-flash-lite';
         }
 
         async function postGeminiForModel2(modelName, apiKey, promptText) {
@@ -697,12 +697,12 @@
         }
 
         async function callGeminiApi2(promptText) {
-            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash' };
+            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash-lite' };
             const apiKey = (cfg.apiKey || '').trim();
             if (!apiKey) return { text: null, reason: 'no_key' };
 
             const primaryModel = sanitizeGeminiModel2(cfg.model);
-            const fallbackCandidates = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+            const fallbackCandidates = ['gemini-2.5-flash-lite', 'gemini-2.0-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
             const modelsToTry = Array.from(new Set([primaryModel, ...fallbackCandidates]));
 
             let lastResult = null;
