@@ -522,7 +522,7 @@
 
         function sanitizeGeminiModel2(rawModel) {
             const m = (rawModel || '').trim().replace(/^models\//i, '');
-            return m || 'Gemini-3.5-flash-lite';
+            return m || 'gemini-3.5-flash-lite';
         }
 
         async function callGeminiApi2(promptText) {
