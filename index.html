@@ -32,13 +32,12 @@
             100% { transform: scale(2.2); opacity: 0; }
         }
 
-        #map2, #map2 .leaflet-container, #map2 .leaflet-tile-pane, #map2 .leaflet-overlay-pane, #map2 .leaflet-marker-pane {
-            background: transparent;
-            transform: translateZ(0);
-            backface-visibility: hidden;
+        #map2, #map2 .leaflet-container {
+            background-color: #1b2620 !important;
+            touch-action: pan-x pan-y pinch-zoom;
         }
-        #map2 .leaflet-tile {
-            outline: 1px solid transparent;
+        #map2 .leaflet-tile-container img {
+            opacity: 1 !important;
         }
 
         .sv2-user-pulse-wrap {
@@ -287,7 +286,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <script>
-        const CODE_DEFAULT_VERSION = '329';
+        const CODE_DEFAULT_VERSION = '330';
         const manualOverrideVer = localStorage.getItem('sv2_manual_version_override');
         window.APP_BUILD_VERSION = (manualOverrideVer && String(manualOverrideVer).trim())
             ? String(manualOverrideVer).trim()
@@ -372,13 +371,13 @@
             });
         }
 
-        function refreshMapAfterPinch2() {
+        function refreshMapTilesSmooth2() {
             const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.invalidateSize === 'function')
                 ? sentieroMap
                 : fallbackMap2;
             if (!activeMap) return;
             try {
-                activeMap.invalidateSize({ animate: false });
+                activeMap.invalidateSize({ animate: false, debounceMoveend: true });
                 if (typeof activeMap.eachLayer === 'function') {
                     activeMap.eachLayer((layer) => {
                         if (typeof layer.redraw === 'function') {
@@ -390,18 +389,26 @@
             } catch (e) {}
         }
 
-        function bindMapPinchAndWaypointSupport2() {
-            const mapEl = document.getElementById('map2');
-            if (!mapEl || mapEl._sv2TouchBound) return;
-            mapEl._sv2TouchBound = true;
+        function bindMapSmoothnessAndWaypointSupport2() {
+            const activeMap = (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.on === 'function')
+                ? sentieroMap
+                : fallbackMap2;
+            if (!activeMap || activeMap._sv2SmoothBound) return;
+            activeMap._sv2SmoothBound = true;
 
-            let pinchTimer = null;
-            mapEl.addEventListener('touchend', () => {
-                clearTimeout(pinchTimer);
-                pinchTimer = setTimeout(() => {
-                    refreshMapAfterPinch2();
-                }, 180);
-            }, { passive: true });
+            let settleTimer = null;
+            const onSettled = () => {
+                clearTimeout(settleTimer);
+                settleTimer = setTimeout(() => {
+                    try {
+                        activeMap.invalidateSize({ animate: false });
+                        attachWaypointCoordinateClickHandlers2();
+                    } catch (e) {}
+                }, 140);
+            };
+
+            activeMap.on('moveend', onSettled);
+            activeMap.on('zoomend', onSettled);
         }
 
         function createPulsingUserIcon2() {
@@ -530,8 +537,6 @@
             const mapEl = document.getElementById('map2');
             if (!mapEl || typeof L === 'undefined') return null;
 
-            bindMapPinchAndWaypointSupport2();
-
             if (typeof initSentieroMap === 'function' && !fallbackMap2) {
                 try {
                     initSentieroMap('map2');
@@ -539,6 +544,7 @@
             }
 
             if (typeof sentieroMap !== 'undefined' && sentieroMap && typeof sentieroMap.setView === 'function') {
+                bindMapSmoothnessAndWaypointSupport2();
                 setTimeout(() => {
                     try {
                         sentieroMap.invalidateSize();
@@ -552,11 +558,17 @@
             if (!fallbackMap2) {
                 const startLat = currentGpsCoords2 ? currentGpsCoords2.lat : 43.5485;
                 const startLon = currentGpsCoords2 ? currentGpsCoords2.lon : 10.4225;
-                fallbackMap2 = L.map('map2', { preferCanvas: true }).setView([startLat, startLon], 15);
+                fallbackMap2 = L.map('map2', {
+                    inertia: true,
+                    inertiaDeceleration: 2000,
+                    wheelDebounceTime: 60
+                }).setView([startLat, startLon], 15);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
+                    keepBuffer: 4,
                     attribution: '&copy; OpenStreetMap'
                 }).addTo(fallbackMap2);
+                bindMapSmoothnessAndWaypointSupport2();
             }
 
             setTimeout(() => {
@@ -1255,7 +1267,7 @@
                 document.getElementById('sentiero2-archivio-modal').style.display = 'none';
                 document.getElementById('track2-status-label').innerText = "Percorso caricato";
                 setTimeout(() => {
-                    refreshMapAfterPinch2();
+                    refreshMapTilesSmooth2();
                 }, 250);
             }
         }
