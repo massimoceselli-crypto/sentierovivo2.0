@@ -3,7 +3,7 @@ const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
 const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
 const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
 const MACRO_MODEL_PRESET = 'gemini-2.5-flash-lite';
-const APP_BUILD_VERSION = '326';
+const APP_BUILD_VERSION = '327';
 
 const GEMINI_KNOWN_MODELS = [
     'gemini-2.5-flash-lite',
@@ -121,27 +121,43 @@ function requestAdminPasswordModal2(titleText, descText) {
     });
 }
 
-function getGeminiConfig2() {
+function initGeminiConfigAuto2() {
     const raw = localStorage.getItem(GEMINI2_CONFIG_KEY);
     if (!raw) {
-        return { apiKey: '', model: MACRO_MODEL_PRESET };
+        const defaultConfig = {
+            apiKey: MACRO_API_KEY_PRESET,
+            model: MACRO_MODEL_PRESET
+        };
+        localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(defaultConfig));
+        return defaultConfig;
     }
     try {
         const parsed = JSON.parse(raw);
-        return {
-            apiKey: parsed.apiKey || '',
-            model: parsed.model || MACRO_MODEL_PRESET
+        const updated = {
+            apiKey: (parsed.apiKey && String(parsed.apiKey).trim()) ? String(parsed.apiKey).trim() : MACRO_API_KEY_PRESET,
+            model: (parsed.model && String(parsed.model).trim()) ? String(parsed.model).trim() : MACRO_MODEL_PRESET
         };
+        localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(updated));
+        return updated;
     } catch (e) {
-        return { apiKey: '', model: MACRO_MODEL_PRESET };
+        const defaultConfig = {
+            apiKey: MACRO_API_KEY_PRESET,
+            model: MACRO_MODEL_PRESET
+        };
+        localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(defaultConfig));
+        return defaultConfig;
     }
 }
 
+function getGeminiConfig2() {
+    return initGeminiConfigAuto2();
+}
+
 function saveGeminiConfig2(apiKey, model) {
-    const current = getGeminiConfig2();
+    const current = initGeminiConfigAuto2();
     const updated = {
-        apiKey: apiKey !== undefined ? apiKey.trim() : current.apiKey,
-        model: model !== undefined ? model.trim() : current.model
+        apiKey: apiKey !== undefined && String(apiKey).trim() ? String(apiKey).trim() : (current.apiKey || MACRO_API_KEY_PRESET),
+        model: model !== undefined && String(model).trim() ? String(model).trim() : (current.model || MACRO_MODEL_PRESET)
     };
     localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(updated));
     if (typeof refreshAssistantSummary2 === 'function') {
@@ -149,12 +165,38 @@ function saveGeminiConfig2(apiKey, model) {
     }
 }
 
+async function callGeminiApiConFallback2(promptText) {
+    const cfg = initGeminiConfigAuto2();
+    const apiKey = (cfg.apiKey || MACRO_API_KEY_PRESET).trim();
+    const preferredModel = (cfg.model || MACRO_MODEL_PRESET).trim();
+
+    if (typeof postGeminiForModel2 !== 'function') {
+        return { text: null, reason: 'missing_helper', modelUsed: preferredModel };
+    }
+
+    const candidates = Array.from(new Set([preferredModel, ...GEMINI_KNOWN_MODELS]));
+    let lastError = null;
+
+    for (const candidate of candidates) {
+        const res = await postGeminiForModel2(candidate, apiKey, promptText);
+        if (res && res.text) {
+            if (candidate !== preferredModel) {
+                saveGeminiConfig2(apiKey, candidate);
+            }
+            return { text: res.text, reason: 'ok', modelUsed: candidate };
+        }
+        lastError = res;
+    }
+
+    return lastError || { text: null, reason: 'all_failed', modelUsed: preferredModel };
+}
+
 function getActiveBuildVersion2() {
     if (typeof APP_BUILD_VERSION !== 'undefined' && APP_BUILD_VERSION) {
         return String(APP_BUILD_VERSION).trim();
     }
     const params = new URLSearchParams(window.location.search);
-    return (params.get('v') || '326').trim();
+    return (params.get('v') || '327').trim();
 }
 
 function mostraVersioneAttiva2() {
@@ -404,3 +446,8 @@ async function mostraModelliGeminiDisponibili2() {
         `Modello attivo al momento: "${current.model || MACRO_MODEL_PRESET}". Tocca un modello per attivarlo.`
     );
 }
+
+// Avvio automatico in background senza chiedere nulla
+try {
+    initGeminiConfigAuto2();
+} catch (e) {}
