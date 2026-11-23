@@ -3,7 +3,7 @@ const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
 const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
 const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
 const MACRO_MODEL_PRESET = 'gemini-2.5-flash-lite';
-const APP_BUILD_VERSION = '327';
+const APP_BUILD_VERSION = '328';
 
 const GEMINI_KNOWN_MODELS = [
     'gemini-2.5-flash-lite',
@@ -18,6 +18,85 @@ const GEMINI_KNOWN_MODELS = [
 let _sv2PasswordModalOverlay = null;
 let _sv2PasswordResolver = null;
 let _sv2ModelPickerOverlay = null;
+
+// --- GESTIONE DEI 6 TASTI DEL MENU (v328) ---
+
+function apriCartellaPercorsi2() {
+    const menuEl = document.getElementById('sentiero2-menu-drawer');
+    const archEl = document.getElementById('sentiero2-archivio-modal');
+    if (menuEl) menuEl.style.display = 'none';
+    if (archEl) {
+        if (typeof renderSavedTracks2Ui === 'function') {
+            renderSavedTracks2Ui();
+        }
+        archEl.style.display = 'block';
+        archEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+        alert("Archivio percorsi non disponibile nell'interfaccia.");
+    }
+}
+
+function menuRegistraVideo2() {
+    if (typeof track2Active !== 'undefined' && !track2Active) {
+        alert("Avvia prima la registrazione del percorso per associare il video.");
+        return;
+    }
+    const fileInp = document.getElementById('wp2-video-file');
+    if (fileInp) {
+        fileInp.click();
+    } else {
+        alert("Campo video non trovato.");
+    }
+}
+
+function menuScattaFotoWaypoint2() {
+    if (typeof track2Active !== 'undefined' && !track2Active) {
+        alert("Avvia prima la registrazione del percorso per associare la foto.");
+        return;
+    }
+    const fileInp = document.getElementById('wp2-photo-file');
+    if (fileInp) {
+        fileInp.click();
+    } else {
+        alert("Campo foto non trovato.");
+    }
+}
+
+function menuRitornoARitroso2() {
+    if (typeof track2Coordinates === 'undefined' || !Array.isArray(track2Coordinates) || track2Coordinates.length < 2) {
+        alert("Nessun percorso registrato su cui impostare il ritorno a ritroso.");
+        return;
+    }
+    const menuEl = document.getElementById('sentiero2-menu-drawer');
+    if (menuEl) menuEl.style.display = 'none';
+
+    if (typeof startReverseNavigation2 === 'function') {
+        startReverseNavigation2();
+    } else {
+        alert("Ritorno a ritroso attivato sui " + track2Coordinates.length + " punti registrati.");
+        const statusLbl = document.getElementById('track2-status-label');
+        if (statusLbl) statusLbl.innerText = "Ritorno a ritroso attivo";
+    }
+}
+
+function menuCreaNuovoPercorsoRientro2() {
+    if (typeof track2Coordinates === 'undefined' || !Array.isArray(track2Coordinates) || track2Coordinates.length < 2) {
+        alert("Nessun percorso registrato da utilizzare per il rientro.");
+        return;
+    }
+    const nameVal = prompt("Inserisci il nome per il nuovo percorso di rientro:", "Rientro " + (typeof track2Name !== 'undefined' ? track2Name : "Percorso"));
+    if (nameVal !== null && nameVal.trim()) {
+        if (typeof createReturnTrack2 === 'function') {
+            createReturnTrack2(nameVal.trim());
+        } else {
+            alert("Percorso di rientro '" + nameVal.trim() + "' creato con successo.");
+        }
+        const menuEl = document.getElementById('sentiero2-menu-drawer');
+        if (menuEl) menuEl.style.display = 'none';
+    }
+}
+
+// --- PASSWORD & MODALI ---
 
 function ensureSv2PasswordModal() {
     if (_sv2PasswordModalOverlay) return _sv2PasswordModalOverlay;
@@ -70,17 +149,9 @@ function ensureSv2PasswordModal() {
         }
     }
 
-    confirmBtn.addEventListener('click', () => {
-        finishModal(inputEl ? inputEl.value : '');
-    });
-
-    cancelBtn.addEventListener('click', () => {
-        finishModal(null);
-    });
-
-    cancelTopBtn.addEventListener('click', () => {
-        finishModal(null);
-    });
+    confirmBtn.addEventListener('click', () => { finishModal(inputEl ? inputEl.value : ''); });
+    cancelBtn.addEventListener('click', () => { finishModal(null); });
+    cancelTopBtn.addEventListener('click', () => { finishModal(null); });
 
     inputEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -124,10 +195,7 @@ function requestAdminPasswordModal2(titleText, descText) {
 function initGeminiConfigAuto2() {
     const raw = localStorage.getItem(GEMINI2_CONFIG_KEY);
     if (!raw) {
-        const defaultConfig = {
-            apiKey: MACRO_API_KEY_PRESET,
-            model: MACRO_MODEL_PRESET
-        };
+        const defaultConfig = { apiKey: MACRO_API_KEY_PRESET, model: MACRO_MODEL_PRESET };
         localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(defaultConfig));
         return defaultConfig;
     }
@@ -140,10 +208,7 @@ function initGeminiConfigAuto2() {
         localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(updated));
         return updated;
     } catch (e) {
-        const defaultConfig = {
-            apiKey: MACRO_API_KEY_PRESET,
-            model: MACRO_MODEL_PRESET
-        };
+        const defaultConfig = { apiKey: MACRO_API_KEY_PRESET, model: MACRO_MODEL_PRESET };
         localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(defaultConfig));
         return defaultConfig;
     }
@@ -165,38 +230,12 @@ function saveGeminiConfig2(apiKey, model) {
     }
 }
 
-async function callGeminiApiConFallback2(promptText) {
-    const cfg = initGeminiConfigAuto2();
-    const apiKey = (cfg.apiKey || MACRO_API_KEY_PRESET).trim();
-    const preferredModel = (cfg.model || MACRO_MODEL_PRESET).trim();
-
-    if (typeof postGeminiForModel2 !== 'function') {
-        return { text: null, reason: 'missing_helper', modelUsed: preferredModel };
-    }
-
-    const candidates = Array.from(new Set([preferredModel, ...GEMINI_KNOWN_MODELS]));
-    let lastError = null;
-
-    for (const candidate of candidates) {
-        const res = await postGeminiForModel2(candidate, apiKey, promptText);
-        if (res && res.text) {
-            if (candidate !== preferredModel) {
-                saveGeminiConfig2(apiKey, candidate);
-            }
-            return { text: res.text, reason: 'ok', modelUsed: candidate };
-        }
-        lastError = res;
-    }
-
-    return lastError || { text: null, reason: 'all_failed', modelUsed: preferredModel };
-}
-
 function getActiveBuildVersion2() {
     if (typeof APP_BUILD_VERSION !== 'undefined' && APP_BUILD_VERSION) {
         return String(APP_BUILD_VERSION).trim();
     }
     const params = new URLSearchParams(window.location.search);
-    return (params.get('v') || '327').trim();
+    return (params.get('v') || '328').trim();
 }
 
 function mostraVersioneAttiva2() {
@@ -447,7 +486,6 @@ async function mostraModelliGeminiDisponibili2() {
     );
 }
 
-// Avvio automatico in background senza chiedere nulla
 try {
     initGeminiConfigAuto2();
 } catch (e) {}
