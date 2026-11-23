@@ -174,6 +174,7 @@
             <div style="border-top:1px solid #333; padding-top:16px;">
                 <div style="font-size:18px; color:#80cbc4; font-weight:bold; margin-bottom:12px;">Licenza e Gemini (protetti da password)</div>
                 <div style="display:grid; grid-template-columns:1fr; gap:10px;">
+                    <button class="sv2-menu-big-btn" onclick="eseguiMacroConfigurazioneCompleta2()" style="text-align:left; border:1px solid #ffb300; background:#3a2b09; color:#ffe082; font-weight:bold; cursor:pointer;">⚡ MACRO</button>
                     <button class="sv2-menu-big-btn" onclick="unlockAndShowLicenseBox2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🔑 Inserisci codice di licenza</button>
                     <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('key')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">⚙️ Imposta chiave API Gemini</button>
                     <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('model')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🤖 Imposta modello Gemini</button>
@@ -520,15 +521,12 @@
         }
 
         function sanitizeGeminiModel2(rawModel) {
-            let m = (rawModel || '').trim().replace(/^models\//i, '');
-            if (!m || m.includes(' ') || m.includes('1.5')) {
-                return 'gemini-2.5-flash';
-            }
-            return m;
+            const m = (rawModel || '').trim().replace(/^models\//i, '');
+            return m || 'Gemini-3.5-flash-lite';
         }
 
         async function callGeminiApi2(promptText) {
-            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-2.5-flash' };
+            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'Gemini-3.5-flash-lite' };
             const apiKey = (cfg.apiKey || '').trim();
             if (!apiKey) return { text: null, reason: 'no_key' };
 
