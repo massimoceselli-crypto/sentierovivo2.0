@@ -522,11 +522,11 @@
 
         function sanitizeGeminiModel2(rawModel) {
             const m = (rawModel || '').trim().replace(/^models\//i, '');
-            return m || 'gemini-3.5-flash-lite';
+            return m || 'gemini-1.5-flash';
         }
 
         async function callGeminiApi2(promptText) {
-            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'Gemini-3.5-flash-lite' };
+            const cfg = (typeof getGeminiConfig2 === 'function') ? getGeminiConfig2() : { apiKey: '', model: 'gemini-1.5-flash' };
             const apiKey = (cfg.apiKey || '').trim();
             if (!apiKey) return { text: null, reason: 'no_key' };
 
