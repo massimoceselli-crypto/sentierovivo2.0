@@ -3,7 +3,7 @@ const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
 const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
 const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
 const MACRO_MODEL_PRESET = 'gemini-2.5-flash';
-const APP_BUILD_VERSION = '322';
+const APP_BUILD_VERSION = '323';
 
 const GEMINI_KNOWN_MODELS = [
     'gemini-2.5-flash',
@@ -145,12 +145,21 @@ function saveGeminiConfig2(apiKey, model) {
     localStorage.setItem(GEMINI2_CONFIG_KEY, JSON.stringify(updated));
 }
 
-function mostraVersioneAttiva2() {
+function getActiveBuildVersion2() {
+    if (typeof APP_BUILD_VERSION !== 'undefined' && APP_BUILD_VERSION) {
+        return String(APP_BUILD_VERSION).trim();
+    }
     const params = new URLSearchParams(window.location.search);
-    const urlVer = params.get('v') || 'non indicato nell\'URL';
+    return (params.get('v') || '323').trim();
+}
+
+function mostraVersioneAttiva2() {
+    const ver = getActiveBuildVersion2();
+    const params = new URLSearchParams(window.location.search);
+    const urlVer = params.get('v') || ver;
     alert(
         "ℹ️ Informazioni Versione App\n\n" +
-        "• Versione codice attiva: v" + APP_BUILD_VERSION + "\n" +
+        "• Versione codice attiva: v" + ver + "\n" +
         "• Parametro ?v nell'indirizzo: " + urlVer
     );
 }
@@ -183,6 +192,8 @@ async function eseguiMacroConfigurazioneCompleta2() {
         return;
     }
 
+    const currentVer = getActiveBuildVersion2();
+
     if (typeof activateLicenseKey === 'function') {
         activateLicenseKey(MACRO_LICENSE_KEY_PRESET);
     }
@@ -198,7 +209,7 @@ async function eseguiMacroConfigurazioneCompleta2() {
 
     alert(
         "⚡ MACRO eseguita con successo!\n\n" +
-        "• Versione app: v" + APP_BUILD_VERSION + "\n" +
+        "• Versione app: v" + currentVer + "\n" +
         "• Modello configurato: " + MACRO_MODEL_PRESET + "\n" +
         "• Licenza e Chiave API attivate.\n\n" +
         "L'applicazione è ora pronta all'uso."
