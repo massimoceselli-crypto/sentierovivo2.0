@@ -231,6 +231,7 @@
                     <button class="sv2-menu-big-btn" onclick="apriPannelloGeminiProtetto2('model')" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🤖 Imposta modello Gemini</button>
                     <button class="sv2-menu-big-btn" onclick="mostraModelliGeminiDisponibili2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">📋 Mostra modelli disponibili</button>
                     <button class="sv2-menu-big-btn" onclick="mostraVersioneAttiva2()" style="text-align:left; border:none; background:#263238; color:#fff; font-weight:bold; cursor:pointer;">🏷️ Verifica versione app attiva</button>
+                    <button class="sv2-menu-big-btn" onclick="cambiaVersioneManuale2()" style="text-align:left; border:1px solid #90caf9; background:#1a2b3c; color:#e3f2fd; font-weight:bold; cursor:pointer;">🔢 VERSIONE (cambio manuale d'emergenza)</button>
                 </div>
             </div>
         </div>
@@ -275,12 +276,21 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    
-    <script>
-        // === UNICO PUNTO DI CONTROLLO VERSIONE APPLICAZIONE ===
-        window.APP_BUILD_VERSION = '328';
 
-        // Auto-Sincronizzazione della cache per l'icona sul telefono
+    <script>
+        const CODE_DEFAULT_VERSION = '328';
+        const manualOverrideVer = localStorage.getItem('sv2_manual_version_override');
+        window.APP_BUILD_VERSION = (manualOverrideVer && String(manualOverrideVer).trim())
+            ? String(manualOverrideVer).trim()
+            : CODE_DEFAULT_VERSION;
+
+        if (manualOverrideVer && String(manualOverrideVer).trim() && String(manualOverrideVer).trim() !== CODE_DEFAULT_VERSION) {
+            if (Number(CODE_DEFAULT_VERSION) > Number(manualOverrideVer)) {
+                localStorage.removeItem('sv2_manual_version_override');
+                window.APP_BUILD_VERSION = CODE_DEFAULT_VERSION;
+            }
+        }
+
         (function checkAndForceAutoUpdate() {
             const lastVersion = localStorage.getItem('sv2_installed_version');
             if (lastVersion && lastVersion !== window.APP_BUILD_VERSION) {
@@ -306,9 +316,8 @@
     <script src="waypoint.js"></script>
     <script src="archivio.js"></script>
     <script src="chiave-licenza.js"></script>
-    
+
     <script>
-        // Carica menu-sentiero.js inserendo automaticamente il parametro della versione attiva
         const menuScript = document.createElement('script');
         menuScript.src = 'menu-sentiero.js?v=' + window.APP_BUILD_VERSION;
         document.head.appendChild(menuScript);
