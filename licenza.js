@@ -1,10 +1,10 @@
 const LICENZA2_STORAGE_KEY = 'sentierovivo2_license_state';
 const LICENZA2_TRIAL_DAYS = 30;
 const LICENZA2_VALID_KEYS = [
+    'MASSIMO2026',
     'SENTIEROVIP2026',
     'MASSIMOMASTER2026',
     'SENTIEROVIP',
-    'MASSIMO2026',
     'SENTIERO2026'
 ];
 
@@ -96,7 +96,7 @@ function handleLicenseSubmit() {
         }
     } else {
         if (statusEl) {
-            statusEl.innerText = "Codice non valido. Usa ad esempio SENTIEROVIP2026 o MASSIMOMASTER2026.";
+            statusEl.innerText = "Codice non valido. Usa ad esempio MASSIMO2026 o SENTIEROVIP2026.";
         }
         alert("Codice di licenza non valido.");
     }
