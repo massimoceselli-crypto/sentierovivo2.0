@@ -3,7 +3,7 @@ const SENTIERO2_ADMIN_PASS = 'MASSIMO2026';
 const MACRO_LICENSE_KEY_PRESET = 'MASSIMO2026';
 const MACRO_API_KEY_PRESET = 'AQ.Ab8RN6LQL1NnaeJAR4D9Tj4MPoXb-BBdSak9cclLxoY_DchFhA';
 const MACRO_MODEL_PRESET = 'gemini-2.5-flash-lite';
-const APP_BUILD_VERSION = '330';
+const APP_BUILD_VERSION = '331';
 
 const GEMINI_KNOWN_MODELS = [
     'gemini-2.5-flash-lite',
@@ -238,7 +238,7 @@ function getActiveBuildVersion2() {
         return String(APP_BUILD_VERSION).trim();
     }
     const params = new URLSearchParams(window.location.search);
-    return (params.get('v') || '330').trim();
+    return (params.get('v') || '331').trim();
 }
 
 function mostraVersioneAttiva2() {
@@ -260,7 +260,7 @@ async function cambiaVersioneManuale2() {
 
     const currentVer = getActiveBuildVersion2();
     const nuovaVer = prompt(
-        "Versione attualmente attiva: v" + currentVer + "\n\nInserisci il nuovo numero di versione (es. 331):",
+        "Versione attualmente attiva: v" + currentVer + "\n\nInserisci il nuovo numero di versione (es. 332):",
         currentVer
     );
 
